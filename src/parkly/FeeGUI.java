@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter; // Import if you need to display form
 public class FeeGUI extends JDialog {
     // --- Components ---
 	private final JPanel mainPanel;
+	private final EmployeeService es;
 	private final JTextField searchTicketText;
 	private final JButton searchTicketButton;
 	private final JPanel detailsPanel;
@@ -16,8 +17,8 @@ public class FeeGUI extends JDialog {
 	private JTextField paymentAmountText;
 	private JComboBox<String> payTypeCombo;
 	private JButton payButton;
-	private Ticket ticket; // For returning the result
-
+	private String ticket; // For Finding and returning the result
+	
     // --- Modernization: Look and Feel setup (Optional, call once at application start) ---
     public static void setLookAndFeel() {
         try {
@@ -38,8 +39,9 @@ public class FeeGUI extends JDialog {
         }
     }
 
-	public FeeGUI(JFrame owner) {
+	public FeeGUI(JFrame owner, EmployeeService es) {
 		super(owner, "Pay Parking Fees", ModalityType.APPLICATION_MODAL);
+		this.es = es;
         // 1. Modernize Initial Setup
         // setLookAndFeel(); // Call this once in your main application entry point
 
@@ -87,26 +89,26 @@ public class FeeGUI extends JDialog {
 		new TicketSearchTask(input).execute();
 	}
 
-	private void displayTicketDetails(Ticket foundTicket) {
+	private void displayTicketDetails(LocalTicket foundTicket) {
 		detailsPanel.removeAll();
         // Use GridBagConstraints for organized, modern layout
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5); // Padding around components
         gbc.fill = GridBagConstraints.HORIZONTAL;
         
-		System.out.println("FeeGUI.displayTicketDetails: \tFOUND TICKET: " + foundTicket.getTicketID());
-		System.out.println("\t\tTicket Data:\n\tENTRY TIME: " + foundTicket.getEntryTime() + "\n\tEXIT TIME: " + foundTicket.getExitTime() + "\n\tFEES DUE: " + foundTicket.getTotalFees());
+		System.out.println("TICKET RECEIVED: " + foundTicket);
 		
 		// 1. Ticket Details Section (Using a JTextArea inside a JScrollPane)
         String detailsText = String.format(
             "Ticket ID: %s\n" +
             "Entry Date: %s | Entry Time: %s\n" +
             "Exit Date: %s | Exit Time: %s\n" +
-            "Total Parked Time (hrs): %d", 
+            "Total Parked Time (hrs): %d\n" +
+            "Ticket Paid: %s\n",
             foundTicket.getTicketID(),
             foundTicket.getEntryDate(), foundTicket.getEntryTime(),
             foundTicket.getExitDate(), foundTicket.getExitTime(),
-            foundTicket.getTotalTime()
+            foundTicket.getTotalTime(), foundTicket.isPaid()
         );
         
         ticketDetailsArea = new JTextArea(detailsText, 5, 30); // 5 rows, 30 columns
@@ -117,7 +119,9 @@ public class FeeGUI extends JDialog {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2; // Span two columns
-        detailsPanel.add(new JScrollPane(ticketDetailsArea), gbc);
+        JScrollPane scrollPane = new JScrollPane(ticketDetailsArea);
+        scrollPane.setPreferredSize(new Dimension(300, 100));
+        detailsPanel.add(scrollPane, gbc);
         
 		// 2. Fees Due Label
         boolean isTicketPaid = foundTicket.isPaid();
@@ -163,7 +167,7 @@ public class FeeGUI extends JDialog {
         payButton.setForeground(Color.BLACK);
         payButton.setFont(new Font("SansSerif", Font.BOLD, 14));
 
-        // Use Lambda for Action Listener
+        // Pay ticket
 		payButton.addActionListener(e -> processPayment(foundTicket));
 		paymentAmountText.setEnabled(!isTicketPaid);
 		payTypeCombo.setEnabled(!isTicketPaid);
@@ -180,7 +184,11 @@ public class FeeGUI extends JDialog {
 		this.pack();
 	}
 	
-	private void processPayment(Ticket paidTicket) {
+	public String getProcessedTicket() {
+		return this.ticket;
+	}
+	
+	private void processPayment(LocalTicket paidTicket) {
 		// Finalized payment logic
 		String payType = (String) payTypeCombo.getSelectedItem();
 		double amount = 0.0;
@@ -192,21 +200,14 @@ public class FeeGUI extends JDialog {
         }
 		
         payButton.setEnabled(false);
-        new PayTicketTask(paidTicket, payType).execute();
-		// Send update to server
-//		EmployeeService.payTicket(paidTicket);
-		// Store result and dispose dialog
-//		this.ticket = paidTicket;
+        new PayTicketTask(paidTicket, payType, amount).execute();
 		JOptionPane.showMessageDialog(this, String.format("Payment of $%.2f successful via %s!", amount, payType), "Payment Success", JOptionPane.INFORMATION_MESSAGE);
 		this.dispose();
 	}
 	
-	public Ticket getProcessedTicket() {
-		return this.ticket;
-	}
 
 	// New worker task to avoid blocking EDT
-	private class TicketSearchTask extends SwingWorker<Ticket, Void> {
+	private class TicketSearchTask extends SwingWorker<LocalTicket, Void> {
 		private final String ticketID;
 		
 		public TicketSearchTask(String ticketID) {
@@ -215,13 +216,12 @@ public class FeeGUI extends JDialog {
 		}
 		
         @Override
-		protected Ticket doInBackground() throws Exception {
-			Message searchRequest = new Message("FIND TICKET", "success", ticketID);
+		protected LocalTicket doInBackground() throws Exception {
+			Message searchRequest = new Message("FIND TICKET", "REQUEST TICKET", ticketID);
+			es.sendMessage(searchRequest);
+			LocalTicket foundTicket = es.findTicket(ticketID);
 			
-			EmployeeService.sendMessage(searchRequest);
-			Ticket foundTicket = EmployeeService.findTicket(ticketID);
-			
-			if (foundTicket != null && foundTicket.getTicketID().equalsIgnoreCase(ticketID)) {
+			if (foundTicket != null) {
 				return foundTicket;
 			} else {
 				throw new Exception("Ticket ID " + ticketID + " not found in system.");
@@ -232,10 +232,13 @@ public class FeeGUI extends JDialog {
 		protected void done() {
 			searchTicketButton.setEnabled(true); // reactivate search button
 			try {
-				Ticket foundTicket = get();
-				System.out.println("FeeGUI.done: received ticket: " + foundTicket.getTicketID());
-				ticket = foundTicket;
+				LocalTicket foundTicket = get();
+				System.out.println("FeeGUI.done: received ticket: " + foundTicket);
 				displayTicketDetails(foundTicket);
+				
+				if (foundTicket.isPaid()) {
+					JOptionPane.showMessageDialog(FeeGUI.this, "Ticket" + foundTicket.getTicketID() + " had already been paid.", "Status Check", JOptionPane.WARNING_MESSAGE);
+				}
 			} catch (Exception e) {
 				String fullErrorMessage = e.getMessage();
 				String prefixToRemove = "java.lang.Exception: ";
@@ -256,24 +259,28 @@ public class FeeGUI extends JDialog {
 	}
 	
 	private class PayTicketTask extends SwingWorker<Boolean, Void> {
-		private final Ticket paidTicket;
+		private final String payTicket;
 		private final String payType;
 		private final double amount;
 		
-		public PayTicketTask(Ticket ticket, String payType) {
-			this.paidTicket = ticket;
+		public PayTicketTask(LocalTicket ticket, String payType, double amountPaid) {
+			this.payTicket = ticket.getTicketID();
 			this.payType = payType;
-			this.amount = Double.parseDouble(paymentAmountText.getText());
+			this.amount = amountPaid;
 			searchTicketButton.setEnabled(false);
 		}
 		@Override
 		protected Boolean doInBackground() throws Exception {
-			if (paidTicket == null) {
+			if (payTicket == null) {
 				throw new Exception("Ticket not found in system.");
 			}
-			Boolean ticketPaidSuccessfully = EmployeeService.payTicket(paidTicket);
+			System.out.println("1. FEEGUI: START OF PAYMENT PROCESS");
+			LocalPayment ticketPaidSuccessfully = es.makePayment(payTicket, payType, amount);
 			Thread.sleep(200);
-			if (ticketPaidSuccessfully) {
+//			System.out.println("Ticket ID: " + ticket.getTicketID() + "| Ticket paid: " + ticket.isPaid());
+			System.out.println(ticketPaidSuccessfully);
+			System.out.println("17. PAYMENT RETURNED");
+			if (ticketPaidSuccessfully != null) {
 				return true;
 			} else {
 				return false;
@@ -286,7 +293,7 @@ public class FeeGUI extends JDialog {
 			payButton.setEnabled(true);
 			try {
 				if (get()) {
-					ticket = paidTicket;
+					ticket = payTicket;
 					JOptionPane.showMessageDialog(FeeGUI.this, String.format("Payment of $%.2f successful via %s!", amount, payType), "Payment Success", JOptionPane.INFORMATION_MESSAGE);
 					FeeGUI.this.dispose();
 				}

@@ -4,11 +4,14 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.Objects;
 import java.io.Serializable;
 
 public class Ticket implements ObjectTag, Serializable {
-	private static final long serialVerisionUID = 1L;
+//	private static final long serialVerisionUID = 1L;
 	private static int nextTicketID = 0;
+	private  final String employeeID;
+	private final String gateID;
 	private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm");
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("M/d/yyyy");
 	private final String tag = "TICKET";
@@ -16,33 +19,26 @@ public class Ticket implements ObjectTag, Serializable {
 	private transient LocalDateTime entryStamp; // transient is needed to send object over stream because LocalDateTime is not serializable 
 	private String entryDate;
 	private String entryTime;
-    private int entryHour;
-    private int entryMinute;
     private transient LocalDateTime exitStamp;
     private String exitDate;
     private String exitTime;
-    private int exitHour;
-    private int exitMinute;
     private int totalTime;
     private int fee;
     private int totalDue;
+    private int totalPaid;
     private boolean isPaid;
-    private static synchronized int getNextTicketID() {return ++nextTicketID;};
     
-    public Ticket() {
-        this.ticketID = getNextTicketID();
+    
+    public Ticket(int ticketID, String employeeID, String gateID) {
+    	this.ticketID = ticketID;
+    	this.employeeID = employeeID;
+    	this.gateID = gateID;
         this.entryStamp = LocalDateTime.now(); // create new date time object here.
-//        this.entryDate = String.valueOf(this.entryStamp.getMonthValue()) + "/" + String.valueOf(this.entryStamp.getDayOfMonth()) + "/" + String.valueOf(this.entryStamp.getYear()); // MM/dd/yyyy
-//        this.entryTime = String.valueOf(this.entryStamp.getHour()) + ":" + String.valueOf(this.entryStamp.getMinute());
         this.entryDate = this.entryStamp.format(DATE_FORMATTER);
         this.entryTime = this.entryStamp.format(TIME_FORMATTER);
-        this.entryMinute = this.entryStamp.getMinute();
-        this.entryHour = this.entryStamp.getHour();
         this.exitStamp = null;
         this.exitDate = "";
         this.exitTime = "";
-//        this.exitMinute = 0;
-//        this.exitHour = 0;
         this.totalTime = 0;
         this.fee = 5;
         this.totalDue = this.fee;
@@ -56,6 +52,12 @@ public class Ticket implements ObjectTag, Serializable {
     // Return ticket ID
     public String getTicketID() {
         return String.valueOf(this.ticketID);
+    }
+    public String getEmployeeID() {
+    	return this.employeeID;
+    }
+    public String getGateID() {
+    	return this.gateID;
     }
     // Return LocalDateTime entry stamp
     public LocalDateTime getEntryStamp() {
@@ -82,14 +84,11 @@ public class Ticket implements ObjectTag, Serializable {
     // Set LocalDateTime exit stamp
     public void setExitStamp() {
     	this.exitStamp = LocalDateTime.now();
-    	// Inside setExitStamp()
-//    	this.exitDate = String.valueOf(this.exitStamp.getMonthValue()) + "/" + String.valueOf(this.exitStamp.getDayOfMonth()) + "/" + String.valueOf(this.exitStamp.getYear());    	
-//    	this.exitTime = String.valueOf(this.exitStamp.getHour()) + ":" + String.valueOf(this.exitStamp.getMinute());
     	this.exitDate = this.exitStamp.format(DATE_FORMATTER);
     	this.exitTime = this.exitStamp.format(TIME_FORMATTER);
     	calcTotalTime();
     	calcFeeTotals();
-    	System.out.println("TICKET.setExitStamp:\n\tExit Date: " + this.exitDate + "\n\tExit Time: " + this.exitTime);
+//    	System.out.println("TICKET.setExitStamp:\n\tExit Date: " + this.exitDate + "\n\tExit Time: " + this.exitTime);
     }
     public String getExitTime() {
     	return this.exitTime;
@@ -113,6 +112,10 @@ public class Ticket implements ObjectTag, Serializable {
     public int getTotalFees() {
     	return this.totalDue;
     }
+    
+    public void makePayment(double paymentAmount) {
+    	this.totalDue -= paymentAmount;
+    }
     public void markPaid() {
     	this.isPaid = true;
     }
@@ -120,9 +123,26 @@ public class Ticket implements ObjectTag, Serializable {
     public boolean isPaid() {
     	return this.isPaid;
     }
-    public boolean isValid() {
-    	return false;
+    
+    @Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		
+		Ticket ticket = (Ticket) obj;
+		return Objects.equals(ticketID,  ticket.ticketID);
+	}
+    
+    @Override
+    public int hashCode() {
+    	return Objects.hash(ticketID);
     }
 }
+
+
 
 
