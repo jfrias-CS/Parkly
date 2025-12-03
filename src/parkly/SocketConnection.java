@@ -23,10 +23,12 @@ public class SocketConnection implements Runnable {
 	private volatile String incomingTicket = null;
 	private volatile String ticketList = null;
 	private volatile String incomingPaymentInfo = null;
-	private volatile List<Payment> approvedPayments = null;
-	private String entryGateStatus;
+	private volatile String paymentList = null;
+	private volatile String errorMessage = null;
 	private String entryGateId;
+	private String entryGateStatus;
 	private String exitGateId;
+	private String exitGateStatus;
 	private Scanner sc;
 	private String input;
 	private String type;
@@ -34,6 +36,7 @@ public class SocketConnection implements Runnable {
 	private String text;
 	private volatile boolean running = true;
 	private volatile Boolean releaseSuccess = null;
+
 	
 	
 	// consider adding host and port number to parameters for constructor, not implemented for testing ATM.
@@ -97,19 +100,31 @@ public class SocketConnection implements Runnable {
 						else if(type.equalsIgnoreCase("TICKET LIST") && status.equalsIgnoreCase("SUCCESS")) {
 							this.ticketList = text;
 						}
-						// open gate
-						else if (type.equalsIgnoreCase("GATE") && status.equalsIgnoreCase("SUCCESS") && text.equalsIgnoreCase("GATE OPEN")) {
+						// open entry gate
+						else if (type.equalsIgnoreCase("ENTRY GATE") && status.equalsIgnoreCase("SUCCESS") && text.equalsIgnoreCase("GATE OPEN")) {
 							System.out.println("SocketConnection.run: Receieved Gate Open Message");
 							this.entryGateStatus = "OPEN";
 //										EmployeeGUI.appendServerMessage("Server: GATE " + this.entryGateId + " is OPEN.");
-							setupGateCloseTimer(this.entryGateId);
 						} 
-						// close gate
-						else if (type.equalsIgnoreCase("GATE") && status.equalsIgnoreCase("SUCCESS") && text.equalsIgnoreCase("GATE CLOSED")) {
+						// close entry gate
+						else if (type.equalsIgnoreCase("ENTRY GATE") && status.equalsIgnoreCase("SUCCESS") && text.equalsIgnoreCase("GATE CLOSED")) {
 							System.out.println("SocketConnection.run: Received Gate Closed Message");
-							EmployeeGUI.appendServerMessage("Server: " + text);
 							this.entryGateStatus = "CLOSED";
+//							EmployeeGUI.appendServerMessage("Server: " + text);
 						}
+						// open exit gate
+						else if (type.equalsIgnoreCase("EXIT GATE") && status.equalsIgnoreCase("SUCCESS") && text.equalsIgnoreCase("GATE OPEN")) {
+							System.out.println("SocketConnection.run: Received Gate Closed message.");
+							this.exitGateStatus = "CLOSED";
+//							EmployeeGUI.appendServerMessage("Server: " + text);
+						}
+						// close exit gate
+						else if (type.equalsIgnoreCase("EXIT GATE") && status.equalsIgnoreCase("SUCCESS") && text.equalsIgnoreCase("GATE CLOSED")) {
+							System.out.println("SocketConnection.run: Received Gate Closed message.");
+							this.entryGateStatus = "CLOSED";
+//							EmployeeGUI.appendServerMessage("Server: " + text);
+						}
+						
 						else if (type.equalsIgnoreCase("TICKET LIST") && status.equalsIgnoreCase("START")) {
 							EmployeeGUI.appendServerMessage(type + ": " + status);
 						}
@@ -117,8 +132,19 @@ public class SocketConnection implements Runnable {
 //										EmployeeGUI.appendServerMessage(type + ": " + status + " | " + text);
 						}
 						else if (type.equalsIgnoreCase("PAYMENT INFO") && status.equalsIgnoreCase("SUCCESS")) {
-							EmployeeGUI.appendServerMessage(text);
+//							EmployeeGUI.appendServerMessage(text);
 							this.incomingPaymentInfo = text;
+
+						}
+						// PAYMENT LIST
+						else if (type.equalsIgnoreCase("PAYMENT LIST") && status.equalsIgnoreCase("SUCCESS")) {
+//							EmployeeGUI.appendServerMessage("INCOMING STRING: " + text);
+							this.paymentList = text;
+						}
+						else if (type.equalsIgnoreCase("TICKET") && status.equalsIgnoreCase("FAILURE")) {
+							this.errorMessage = text;
+							System.out.println("SocketConnection.run: ERROR REACHED - " + text);
+							EmployeeGUI.appendServerMessage(text);
 						}
 						else {
 //										EmployeeGUI.appendServerMessage("Server: " + text + "\n");
@@ -265,6 +291,7 @@ public class SocketConnection implements Runnable {
 	
 	public String generateTicket(String employeeID, String gateId) {
 		System.out.println("SocketConnection.generateTicket: Passing message to sendMessage");
+		this.incomingTicket = null;
 		sendMessage(new Message("TICKET", "NEW TICKET", employeeID + "|" + gateId));
 		long startTime = System.currentTimeMillis();
 		final long TIMEOUT_MS = 3000;
@@ -304,7 +331,7 @@ public class SocketConnection implements Runnable {
 		String returnTicket = this.incomingTicket;
 		this.incomingTicket = null;
 		if (returnTicket != null) {
-			System.out.println("SC:findTicke - TICKET FOUND - " + returnTicket);
+			System.out.println("SC:findTicket - TICKET FOUND - " + returnTicket);
 		} else {
 			System.out.println("SocketConnection.findTicket: \n\tTicket not found or timed out");
 		}
@@ -344,8 +371,8 @@ public class SocketConnection implements Runnable {
 		System.out.println("4. SC.MP");
 		sendMessage(new Message("PAY TICKET", "MAKE PAYMENT", payTicketID + "|" + payType + "|" + amount + "|" + employeeID + "|" + exitGate));
 		long startTime = System.currentTimeMillis();
-		final long TIMEOUT_MS = 10000;
-		while (this.incomingTicket == null && (System.currentTimeMillis() - startTime < TIMEOUT_MS)) {
+		final long TIMEOUT_MS = 3000;
+		while (this.incomingPaymentInfo == null && (System.currentTimeMillis() - startTime < TIMEOUT_MS)) {
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
@@ -361,6 +388,26 @@ public class SocketConnection implements Runnable {
 		return returnPayment;
 	}
 	
+	
+	public String getPayments() {
+		this.paymentList = null;
+		System.out.println("SC.getPayments: Senging Request.");
+		sendMessage(new Message("PAYMENT LIST", "REQUEST", "PAYMENTS"));
+		long startTime = System.currentTimeMillis();
+		final long TIMEOUT_MS = 3000;
+		while (this.paymentList == null && (System.currentTimeMillis() - startTime < TIMEOUT_MS)) {
+			try {
+				Thread.sleep(50);
+				return null;
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();				
+			}
+		}
+		String returnPayments = this.paymentList;
+		System.out.println("SocketConnection.getPayments:" + returnPayments);
+		this.paymentList = null;
+		return returnPayments;
+	}
 	public boolean releaseTicket (String ticketID, String gateId) {
 		this.releaseSuccess = null;
 		sendMessage(new Message("RELEASE TICKET", "REQUEST", ticketID + " | " + gateId));
@@ -380,11 +427,11 @@ public class SocketConnection implements Runnable {
 	    return result;
 	}
 	
-	// Not currently in use
+	// Open Entry Gate
 	public String openEntryGate(String entryGateId) {
 		this.entryGateId = entryGateId;
 		this.entryGateStatus = null;
-		sendMessage(new Message("GATE", "OPEN REQUEST", entryGateId));
+		sendMessage(new Message("ENTRY GATE", "OPEN REQUEST", entryGateId));
 		
 		long startTime = System.currentTimeMillis();
 		final long TIMEOUT_MS = 1000;
@@ -396,13 +443,14 @@ public class SocketConnection implements Runnable {
 				return "GATE FAILED TO OPEN";
 			}
 		}
-		
 		String gateStatus = this.entryGateStatus;
+		setupEntryGateCloseTimer(this.entryGateId);
+		EmployeeGUI.appendServerMessage("Entry gate: " + entryGateId + " now " + this.entryGateStatus);
 		this.entryGateStatus = null;
 		return gateStatus;
 	}
-	
-	private void setupGateCloseTimer(String gateId) {
+	// Entry gate timer
+	private void setupEntryGateCloseTimer(String gateId) {
 		SwingUtilities.invokeLater(() -> {
 			EmployeeGUI.appendServerMessage("Server: Gate " + gateId + " is now open. Closing in 5 seconds...");
 		});
@@ -413,13 +461,13 @@ public class SocketConnection implements Runnable {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("Client Timer: 5 seconds elapsed. Sending CLOSE GATE request for " + gateId);
 				EmployeeGUI.appendServerMessage("Client: Sent request to close Gate " + gateId);
-				closeEntryGate(new Message("GATE", "CLOSE REQUEST", gateId));
+				closeEntryGate(new Message("ENTRY GATE", "CLOSE REQUEST", gateId));
 			}
 		});
 		closeGateTimer.setRepeats(false);
 		closeGateTimer.start();
 	}
-	
+	// Close entry gate
 	public void closeEntryGate(Message closeGateMsg) {
 		this.entryGateId = closeGateMsg.getText();
 		this.entryGateStatus = null;
@@ -434,12 +482,67 @@ public class SocketConnection implements Runnable {
 				System.out.println("Failed to close gate.");
 			}
 		}
+		EmployeeGUI.appendServerMessage("Entry gate: " + entryGateId + " now " + this.entryGateStatus);
 	}
-	public String openExitGate(String gateId) {
-		sendMessage(new Message("OPEN GATE", "SUCCESS", gateId));
-		return "Could not open gate";
+	// Open Exit Gate
+	public String openExitGate(String exitGateId) {
+		this.exitGateId = exitGateId;
+		this.exitGateStatus = null;
+		sendMessage(new Message("EXIT GATE", "OPEN REQUEST", exitGateId));
+		
+		long startTime = System.currentTimeMillis();
+		final long TIMEOUT_MS = 1000;
+		while (this.exitGateStatus == null && (System.currentTimeMillis() - startTime < TIMEOUT_MS)) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return "GATE FAILED TO OPEN";
+			}
+		}
+		String gateStatus = this.exitGateStatus;
+		setupExitGateCloseTimer(this.exitGateId);
+		EmployeeGUI.appendServerMessage("Exit gate: " + exitGateId + " is " + this.exitGateStatus);
+		this.exitGateStatus = null;
+		return gateStatus;
 	}
-
+	// Exit gate timer
+	private void setupExitGateCloseTimer(String gateId) {
+		SwingUtilities.invokeLater(() -> {
+			EmployeeGUI.appendServerMessage("Server: Gate " + gateId + " is now open. Closing in 5 seconds...");
+		});
+		
+		int delay = 5000;
+		Timer closeGateTimer = new Timer(delay, new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("Client Timer: 5 seconds elapsed. Sending CLOSE GATE request for " + gateId);
+				EmployeeGUI.appendServerMessage("Client: Sent request to close Gate " + gateId);
+				closeExitGate(new Message("EXIT GATE", "CLOSE REQUEST", gateId));
+			}
+		});
+		closeGateTimer.setRepeats(false);
+		closeGateTimer.start();
+	}
+	
+	// Close exit gate
+	public void closeExitGate(Message closeGateMsg) {
+		this.entryGateId = closeGateMsg.getText();
+		this.entryGateStatus = null;
+		sendMessage(closeGateMsg);
+		long startTime = System.currentTimeMillis();
+		final long TIMEOUT_MS = 1000;
+		while (this.entryGateStatus == null && (System.currentTimeMillis() - startTime < TIMEOUT_MS)) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				System.out.println("Failed to close gate.");
+			}
+		}
+		EmployeeGUI.appendServerMessage("Exit gate: " + exitGateId + " now " + this.entryGateStatus);
+	}
+	
 	public void logout() {
 	    // 1. Send logout request
 		System.out.println("SocketConnection.logout: Sending LOGOUT request.");

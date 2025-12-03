@@ -2,12 +2,15 @@ package parkly;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PaymentService {
+	private static final String PAYMENT_DELIMITER = "\n";
 	private static int nextPaymentID = 1000;
 	private static synchronized int getNextPaymentID() { return nextPaymentID++; }
 	private static final PaymentService instance = new PaymentService();
-	private static final List<Payment> approvedPayments = new ArrayList<>();
+	private static final Map<String, Payment> approvedPayments = new ConcurrentHashMap<>();
 	
 	private PaymentService() {}
 	
@@ -15,11 +18,36 @@ public class PaymentService {
 		return instance;
 	}
 	
-	public List<Payment> getPayments() {
-		synchronized (approvedPayments) {
-			return new ArrayList<>(approvedPayments);
-		}
+	public String getPayments() {
+	    StringBuilder allPaymentsString = new StringBuilder();
+	    boolean first = true; // Use a flag to avoid prepending the delimiter on the first payment
+	    
+	    for (Payment payment : approvedPayments.values()) {
+	        // Prepend the delimiter only if it's NOT the first payment
+	        if (!first) {
+	            allPaymentsString.append(PAYMENT_DELIMITER); // Appends "\n"
+	        }
+	        allPaymentsString.append(toString(payment));
+	        first = false;
+	    }
+	    System.out.println("PS.getPayments: " + allPaymentsString.toString());
+	    return allPaymentsString.toString();
 	}
+	
+//	public String getPayments() {
+//	    StringBuilder allPaymentsString = new StringBuilder();
+//	    boolean first = true;
+//	    
+//	    for (Payment payment : approvedPayments.values()) {
+//	        if (!first) {
+//	            allPaymentsString.append(PAYMENT_DELIMITER);
+//	        }
+//	        allPaymentsString.append(toString(payment));
+//	        first = false;
+//	    }
+//	    System.out.println("PS.getPayments: " + allPaymentsString.toString());
+//	    return allPaymentsString.toString();
+//	}
 	
 	public String recordPayment(String ticketID, String ticketPayType, String amount, String employeeID, String gateID) {
 		System.out.println("7. PS.RP: Inside recordPayment.");
@@ -52,18 +80,20 @@ public class PaymentService {
 		if (!ticketPaid) {
 			System.out.println("TICKET NOT PAID------");
 		}
-		Payment newPayment = new Payment(getNextPaymentID(), ticketID, employeeID, gateID, String.valueOf(ticketDue), ticketPayType);
+		String paymentString;
 		synchronized (approvedPayments) {
-			approvedPayments.add(newPayment);
+		    int paymentID = getNextPaymentID();  // Get ID inside sync block
+		    Payment newPayment = new Payment(paymentID, ticketID, employeeID, gateID, String.valueOf(ticketDue), ticketPayType);
+		    approvedPayments.put(newPayment.getPaymentID(), newPayment);
+		    paymentString = toString(newPayment);
 		}
 		System.out.println("11. PS.generateNewPayment: New Payment Made.");
-		String paymentString = toString(newPayment);
 		return paymentString;
 	}
 	
 	public Payment findPayment(String paymentID) {
 		synchronized(approvedPayments) {
-			for (Payment payment : approvedPayments) {
+			for (Payment payment : approvedPayments.values()) {
 				if (payment.getPaymentID().equals(paymentID)) {
 					return payment;
 				}
@@ -79,7 +109,7 @@ public class PaymentService {
 	public List<Payment> findPaymentsByTicketID(String ticketID) {
 		List<Payment> paymentsForTicket = new ArrayList<>();
 		synchronized(approvedPayments) {			
-			for (Payment payment : approvedPayments) {
+			for (Payment payment : approvedPayments.values()) {
 				if (payment.getTicketID().equals(ticketID)) {
 					paymentsForTicket.add(payment);
 				}

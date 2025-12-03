@@ -21,8 +21,16 @@ public class LocalTicket {
     private int totalPaid;
     private boolean isPaid;
     
-    
-    public LocalTicket(int ticketID, String employeeID, String gateID, String entryDate, String entryTime, String totalDue) {
+    public LocalTicket() {
+    	this.ticketID = -1;
+    	this.employeeID = "";
+    	this.gateID = "";
+    	this.entryDate = "";
+    	this.entryTime = "";
+    	this.exitDate = "";
+    	this.exitTime = "";
+    }
+    public LocalTicket(int ticketID, String employeeID, String gateID, String entryDate, String entryTime, String totalTime, String totalDue) {
     	this.ticketID = ticketID;
     	this.employeeID = employeeID;
     	this.gateID = gateID;
@@ -30,8 +38,8 @@ public class LocalTicket {
     	this.entryTime = entryTime;
         this.exitDate = "";
         this.exitTime = "";
-        this.totalTime = 0;
-        this.fee = 5;
+        this.totalTime = Integer.parseInt(totalTime);
+        this.fee = Integer.parseInt(totalDue);
         try {
         	this.totalDue = Integer.parseInt(totalDue);
         } catch (NumberFormatException e) {
@@ -59,7 +67,7 @@ public class LocalTicket {
         } catch (NumberFormatException e) {
         	System.err.println("Error: The string is not a valid integer format.");
         }
-        this.isPaid = false;
+        this.isPaid = true;
     }
     
     // Return ticket ID

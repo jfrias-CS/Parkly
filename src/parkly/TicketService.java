@@ -11,12 +11,13 @@ import java.util.concurrent.ConcurrentHashMap;
 // singleton
 public class TicketService {
 	// --- CONSTANTS ---
-	private static final String TICKET_DELIMITER = "|\n"; // Unique separator between tickets
+	private static final String TICKET_DELIMITER = "\n"; // Unique separator between tickets
 	
 	private static int nextTicketID;
 	private static synchronized int getNextTicketID() {return nextTicketID++;};
 	private static final TicketService instance = new TicketService();
 	
+	private final static Map<String, Ticket> allTickets = new ConcurrentHashMap<>(); // To generate all reports
 	private final static Map<String, Ticket> activeTickets = new ConcurrentHashMap<>();
 	private final static List<Ticket> paidTickets = new ArrayList<>();
 	
@@ -31,27 +32,28 @@ public class TicketService {
 	// REFRACTORED: getActiveTickets()
 	// Returns a single long string containing all active Ticket data, separated by TICKET_DELIMITER.
 	// ------------------------------------------------------------------
+	// ------------------------------------------------------------------
+	// FIXED: getActiveTickets() - Uses pre-pending delimiter logic
+	// ------------------------------------------------------------------
 	public String getActiveTickets() {
-		StringBuilder allTicketsString = new StringBuilder();
-		
-		// Iterate over the values (Ticket objects) in the thread-safe map
-		for (Ticket ticket : activeTickets.values()) {
-			// Append the string representation of the current ticket
-			allTicketsString.append(toString(ticket));
-			
-			// Append the unique delimiter after each ticket, EXCEPT the last one.
-			// This check is complex with ConcurrentHashMap, so we'll just append it
-			// and trim it off later, or rely on the client to handle a trailing delimiter.
-			// For simplicity and safety in concurrency, we append the delimiter every time.
-			allTicketsString.append(TICKET_DELIMITER);
-		}
-		
-		// Remove the trailing delimiter if the string isn't empty
-		if (allTicketsString.length() > TICKET_DELIMITER.length()) {
-			allTicketsString.setLength(allTicketsString.length() - TICKET_DELIMITER.length());
-		}
-		
-		return allTicketsString.toString();
+	    StringBuilder allTicketsString = new StringBuilder();
+	    boolean first = true; // Flag to track the first iteration
+	    
+	    // Iterate over the values (Ticket objects) in the thread-safe map
+	    for (Ticket ticket : activeTickets.values()) {
+	        
+	        // 1. Prepend the delimiter only if it's NOT the first ticket
+	        if (!first) {
+	            allTicketsString.append(TICKET_DELIMITER); // Appends "|\n"
+	        }
+	        
+	        // 2. Append the string representation of the current ticket
+	        allTicketsString.append(toString(ticket));
+	        
+	        first = false; // Set flag to false for all subsequent iterations
+	    }
+	    
+	    return allTicketsString.toString();
 	}
 	
 	// generateNewTicket remains the same, as it calls toString().
@@ -64,12 +66,12 @@ public class TicketService {
 			Ticket newTicket = new Ticket(newTicketID, employeeID, gateID);
 			
 			activeTickets.put(String.valueOf(newTicketID), newTicket);
-			
+			allTickets.put(String.valueOf(newTicketID), newTicket);
 			String returnTicket = toString(newTicket);
 			System.out.println("TS.generateNewTicket: New ticket generated: \n" + returnTicket);
 			return returnTicket;
 		}
-		return "ERROR GENERATING NEW STRING";
+		return "ERROR: GENERATING NEW STRING";
 	}
 	
 	private void sortPaidList() {
@@ -84,7 +86,7 @@ public class TicketService {
 	
 	// findTicketAsString() remains the same, as it calls toString().
 	public String findTicketAsString(String ticketID) {
-		Ticket ticket = activeTickets.get(ticketID); 
+		Ticket ticket = allTickets.get(ticketID); 
 		
 		if (ticket != null) {
 			ticket.setExitStamp();
@@ -117,21 +119,21 @@ public class TicketService {
 		foundTicket.markPaid();
 		if (foundTicket.isPaid()) {
 			System.out.println("9. TS.MTP: Marked ticket " + foundTicket.getTicketID() + " paid: " + foundTicket.isPaid());
-//			removeTicketFromList(foundTicket);
+			removeTicketFromList(foundTicket);
 			return true;
 		}
 		return false;
 	}
 	
-//	private void removeTicketFromList (Ticket ticket) {
-//		synchronized(paidTickets) {
-//			paidTickets.add(ticket);
-//			sortPaidList();
-//		}
-//		activeTickets.remove(ticket.getTicketID());
-//		
-//		System.out.println("10. Added ticket to paid ticket and removed it form active tickets.");
-//	}
+	private void removeTicketFromList (Ticket ticket) {
+		synchronized(paidTickets) {
+			paidTickets.add(ticket);
+			sortPaidList();
+		}
+		activeTickets.remove(ticket.getTicketID());
+		
+		System.out.println("10. Added ticket to paid ticket and removed it form active tickets.");
+	}
 	
 	// toString() remains the same.
 	public String toString(Ticket ticket) {
@@ -144,12 +146,12 @@ public class TicketService {
 		// The string format is determined by whether the ticket is paid.
 		if (!ticket.isPaid()) {
 			// Unpaid String: 8 fields
-			// ID | GATE | EMP | E_DATE | E_TIME | TOTAL_TIME | TOTAL_FEES | IS_PAID (false)
-			result = ticket.getTicketID() + "\n" + ticket.getGateID() + "\n" + ticket.getEmployeeID() + "\n" + ticket.getEntryDate() + "\n" + ticket.getEntryTime() + "\n" + ticket.getTotalTime() + "\n" + ticket.getTotalFees() + "\n" + ticket.isPaid();
+			// ID | EMP | G | E_DATE | E_TIME | TOTAL_TIME | TOTAL_FEES | IS_PAID (false)
+			result = ticket.getTicketID() + "|" + ticket.getEmployeeID() + "|" + ticket.getGateID() +  "|" + ticket.getEntryDate() + "|" + ticket.getEntryTime() + "|" + ticket.getTotalTime() + "|" + ticket.getTotalFees() + "|" + ticket.isPaid();
 		} else {
 			// Paid String: 10 fields
-			// ID | GATE | EMP | E_DATE | E_TIME | X_DATE | X_TIME | TOTAL_TIME | TOTAL_FEES | IS_PAID (true)
-			result = ticket.getTicketID() + "\n" + ticket.getGateID() + "\n" + ticket.getEmployeeID() + "\n" +ticket.getEntryDate() + "\n" + ticket.getEntryTime() + "\n" + ticket.getExitDate() + "\n" + ticket.getExitTime() + "\n" + ticket.getTotalTime() + "\n" + ticket.getTotalFees() + "\n" + ticket.isPaid();
+			// ID | EMP | G | E_DATE | E_TIME | X_DATE | X_TIME | TOTAL_TIME | TOTAL_FEES | IS_PAID (true)
+			result = ticket.getTicketID() + "|" + ticket.getEmployeeID() + "|" + ticket.getGateID() + "|" +ticket.getEntryDate() + "|" + ticket.getEntryTime() + "|" + ticket.getExitDate() + "|" + ticket.getExitTime() + "|" + ticket.getTotalTime() + "|" + ticket.getTotalFees() + "|" + ticket.isPaid();
 		}
 		System.out.println("Returning:\n" + result);
 		return result;

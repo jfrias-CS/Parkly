@@ -96,7 +96,7 @@ public class FeeGUI extends JDialog {
         gbc.insets = new Insets(5, 5, 5, 5); // Padding around components
         gbc.fill = GridBagConstraints.HORIZONTAL;
         
-		System.out.println("TICKET RECEIVED: " + foundTicket);
+		System.out.println("TICKET RECEIVED: " + foundTicket.getTotalTime());
 		
 		// 1. Ticket Details Section (Using a JTextArea inside a JScrollPane)
         String detailsText = String.format(
@@ -201,8 +201,8 @@ public class FeeGUI extends JDialog {
 		
         payButton.setEnabled(false);
         new PayTicketTask(paidTicket, payType, amount).execute();
-		JOptionPane.showMessageDialog(this, String.format("Payment of $%.2f successful via %s!", amount, payType), "Payment Success", JOptionPane.INFORMATION_MESSAGE);
-		this.dispose();
+//		JOptionPane.showMessageDialog(this, String.format("Payment of $%.2f successful via %s!", amount, payType), "Payment Success", JOptionPane.INFORMATION_MESSAGE);
+//		this.dispose();
 	}
 	
 
@@ -233,12 +233,12 @@ public class FeeGUI extends JDialog {
 			searchTicketButton.setEnabled(true); // reactivate search button
 			try {
 				LocalTicket foundTicket = get();
-				System.out.println("FeeGUI.done: received ticket: " + foundTicket);
+//				System.out.println("FeeGUI.done: received ticket: " + foundTicket);
 				displayTicketDetails(foundTicket);
 				
-				if (foundTicket.isPaid()) {
-					JOptionPane.showMessageDialog(FeeGUI.this, "Ticket" + foundTicket.getTicketID() + " had already been paid.", "Status Check", JOptionPane.WARNING_MESSAGE);
-				}
+//				if (foundTicket.isPaid()) {
+//					JOptionPane.showMessageDialog(FeeGUI.this, "Ticket " + foundTicket.getTicketID() + " had already been paid.", "Status Check", JOptionPane.WARNING_MESSAGE);
+//				}
 			} catch (Exception e) {
 				String fullErrorMessage = e.getMessage();
 				String prefixToRemove = "java.lang.Exception: ";
@@ -295,7 +295,8 @@ public class FeeGUI extends JDialog {
 				if (get()) {
 					ticket = payTicket;
 					JOptionPane.showMessageDialog(FeeGUI.this, String.format("Payment of $%.2f successful via %s!", amount, payType), "Payment Success", JOptionPane.INFORMATION_MESSAGE);
-					FeeGUI.this.dispose();
+//					FeeGUI.this.dispose();
+					searchTicket(payTicket);
 				}
 			} catch (Exception e) {
 				String message = "Payment failed due to a network or server error.";

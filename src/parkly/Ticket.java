@@ -83,11 +83,13 @@ public class Ticket implements ObjectTag, Serializable {
     }
     // Set LocalDateTime exit stamp
     public void setExitStamp() {
-    	this.exitStamp = LocalDateTime.now();
-    	this.exitDate = this.exitStamp.format(DATE_FORMATTER);
-    	this.exitTime = this.exitStamp.format(TIME_FORMATTER);
-    	calcTotalTime();
-    	calcFeeTotals();
+    	if (isPaid == false) {	
+	    	this.exitStamp = LocalDateTime.now();
+	    	this.exitDate = this.exitStamp.format(DATE_FORMATTER);
+	    	this.exitTime = this.exitStamp.format(TIME_FORMATTER);
+	    	calcTotalTime();
+	    	calcFeeTotals();
+    	} 
 //    	System.out.println("TICKET.setExitStamp:\n\tExit Date: " + this.exitDate + "\n\tExit Time: " + this.exitTime);
     }
     public String getExitTime() {
@@ -139,7 +141,7 @@ public class Ticket implements ObjectTag, Serializable {
     
     @Override
     public int hashCode() {
-    	return Objects.hash(ticketID);
+    	return Integer.hashCode(ticketID);
     }
 }
 

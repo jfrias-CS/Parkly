@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * SocketConnectionService, automatically adding the required session context (Gate ID).
  */
 public class EmployeeService {
+	private final static String DELIMITER = "|\n";
 	// --- STATIC SESSION STATE (Central Source of Truth) ---
     private static EmployeeService instance = new EmployeeService();
     private Message msg = null;
@@ -139,7 +140,9 @@ public class EmployeeService {
         // SocketConnectionService handles the synchronous request/response
     	System.out.println("EmployeeService.generateTicket: Sending request for ticket at gate: " + entryGateID);
         String returnTicket = SocketConnectionService.generateTicket(employeeID, entryGateID); 
-        System.out.println("New Ticket:\n" + returnTicket);
+        System.out.println("ES.generateTicket: New Ticket:\n" + returnTicket);
+        if (returnTicket != null && !returnTicket.startsWith("ERROR:")) {
+        	
         // 1. Convert the server's string response to a LocalTicket object
         LocalTicket newTicket = processTicketString(returnTicket);
         
@@ -152,7 +155,11 @@ public class EmployeeService {
         } else {
         	System.out.println("TICKET NULL");
         }
+        System.out.println("NEW TICKET: \n" + newTicket);
         return newTicket;
+        } else {
+        	return null;
+        }
     }
 
     /**
@@ -165,8 +172,6 @@ public class EmployeeService {
         // NOTE: This call must be updated to return the delimited string from the server layer.
         String allTicketsString = SocketConnectionService.getActiveTickets();
         
-        // Define the delimiter used by the server
-        final String TICKET_DELIMITER = "|\n"; 
         
         // Create a temporary map to hold the fresh data from the server
         Map<String, LocalTicket> freshActiveTicketsMap = new ConcurrentHashMap<>();
@@ -175,7 +180,7 @@ public class EmployeeService {
             
             // 2. Split the long string into individual ticket data strings.
             // The double backslash is necessary to escape the pipe symbol in regex.
-            String[] individualTicketStrings = allTicketsString.split("\\|\\n");
+            String[] individualTicketStrings = allTicketsString.split("\n");
 
             // 3. Process each ticket string and populate the temporary map.
             for (String ticketString : individualTicketStrings) {
@@ -200,7 +205,28 @@ public class EmployeeService {
         return activeTickets;
     }
     
- 
+    public Map<String, LocalPayment> getLocalPayments() {
+    	String allPaymentsString = SocketConnectionService.getPayments();
+    	Map<String, LocalPayment> freshPaymentsMap = new ConcurrentHashMap<>();
+    	if (allPaymentsString != null && !allPaymentsString.trim().isEmpty()) {
+    		String[] individualPaymentStrings = allPaymentsString.split("\n");
+    		System.out.println("Individual Payments String:\n" + individualPaymentStrings);
+    		for (String paymentString : individualPaymentStrings) {
+    			System.out.println("Individual Payment String:\n " + paymentString);
+    			LocalPayment payment = processPaymentString(paymentString.trim());
+    			if (payment != null) {
+    				freshPaymentsMap.put(payment.getPaymentID(), payment);
+    			}
+    		}
+    	}
+    	
+    	localPayments.clear();
+    	localPayments.putAll(freshPaymentsMap);
+    	System.out.println("ES: Payments synchronized with server. New size: " + localPayments.size());
+    	return localPayments;
+    }
+    
+    
     /**
      * Sends the signal to open the entry gate, using the Gate ID.
      */
@@ -209,14 +235,25 @@ public class EmployeeService {
     }
 
     public void openExitGate() {
-    	Message msg = new Message("GATE", "OPEN REQUEST" , exitGateID);
+    	SocketConnectionService.openExitGate(exitGateID);
     }
+    
+    	
+//    public String generateGateReport(String ticketID, boolean isOverride, String reason) {
+//    	System.out.println("ES.openExitGate: OPENING GATE: " + this.exitGateID);
+//    	String data = "TicketID: " + ticketID + "|" + "Employee: " + this.employeeID + "|" + "Gate Opened: " + this.exitGateID + "|" + "Reason: " + reason + "|" + "Override: " + isOverride;
+//    	
+////    	Message msg = new Message("GATE", "OPEN REQUEST", data);
+//    	String return message = SocketConnectionService.openExitGate(data);
+    	
+    
     /**
      * Looks up a ticket by ID. (Gate ID is not strictly needed here, but passed through.)
      */
     public LocalTicket findTicket(String ticketID) {
         String returnedTicket = SocketConnectionService.findTicket(ticketID); 
         LocalTicket ticket = processTicketString(returnedTicket);
+        System.out.println();
         return ticket;
     }
 
@@ -277,8 +314,8 @@ public class EmployeeService {
             return null;
         }
 
-        // Split the string by the newline character ("\n")
-        String[] parts = ticketString.split("\n");
+        // Split the string by   ("|")
+        String[] parts = ticketString.split("\\|");
         
         // Check if we have enough fields for a basic ticket
         if (parts.length < 8) {
@@ -288,12 +325,6 @@ public class EmployeeService {
 
         try {
             // Core fields common to both formats (Index based on assumed 10-part paid string)
-            int ticketID = Integer.parseInt(parts[0].trim());
-            String employeeID = parts[1].trim(); 
-            String gateID = parts[2].trim();
-            String entryDate = parts[3].trim();
-            String entryTime = parts[4].trim();
-            
             // ----------------------------------------------------
             // CASE 1: UNPAID/Active Ticket (8 parts)
             // Shorter string, missing exit/total details.
@@ -304,8 +335,16 @@ public class EmployeeService {
                 
                 // Note: The totalTime and totalFees are likely placeholders or minimums 
                 // since the ticket is still active/unpaid. We use parts[5] and parts[6].
-                String totalFees = parts[6].trim();
-                
+            	 int ticketID = Integer.parseInt(parts[0].trim());
+                 String employeeID = parts[1].trim(); 
+                 String gateID = parts[2].trim();
+                 String entryDate = parts[3].trim();
+                 String entryTime = parts[4].trim();
+                 String totalTime = parts[5].trim();
+                 String totalFees = parts[6].trim();
+//               String isPaid = parts[7].trim();
+            	
+            	
                 // Use the 6-argument constructor
                 LocalTicket newTicket = new LocalTicket(
                     ticketID, 
@@ -313,14 +352,16 @@ public class EmployeeService {
                     gateID, 
                     entryDate, 
                     entryTime, 
+                    totalTime,
                     totalFees
+//                    , isPaid
                 );
                 
                 // Explicitly mark it UNPAID based on the shorter length logic
                 // The isPaid value is at parts[7] and should be "false"
-                if (parts[7].trim().equalsIgnoreCase("false")) {
-                     // isPaid defaults to false in the LocalTicket constructor, so no action needed here.
-                }
+//                if (parts[7].trim().equalsIgnoreCase("false")) {
+//                     // isPaid defaults to false in the LocalTicket constructor, so no action needed here.
+//                }
                 
                 return newTicket;
             } 
@@ -332,10 +373,16 @@ public class EmployeeService {
                 // Paid String assumed format:
                 // (TicketID | EmployeeID | GateID | EntryDate | EntryTime | ExitDate | ExitTime | TotalTime | TotalFees | IsPaid [true])
                 
+            	int ticketID = Integer.parseInt(parts[0].trim());
+                String employeeID = parts[1].trim(); 
+                String gateID = parts[2].trim();
+                String entryDate = parts[3].trim();
+                String entryTime = parts[4].trim();
                 String exitDate = parts[5].trim();
                 String exitTime = parts[6].trim();
                 String totalTime = parts[7].trim();
                 String totalFees = parts[8].trim();
+//                String isPaid = parts[9].trim();
                 
                 // Use the 9-argument constructor
                 LocalTicket newTicket = new LocalTicket(
@@ -352,9 +399,9 @@ public class EmployeeService {
 
                 // Explicitly mark it PAID based on the longer length logic
                 // The isPaid value is at parts[9] and should be "true"
-                if (parts[9].trim().equalsIgnoreCase("true")) {
-                    newTicket.markPaid();
-                }
+//                if (parts[9].trim().equalsIgnoreCase("true")) {
+//                    newTicket.markPaid();
+//                }
                 
                 return newTicket;
             } 

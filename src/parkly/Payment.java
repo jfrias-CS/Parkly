@@ -17,8 +17,8 @@ public class Payment implements ObjectTag {
 	private String paymentDate;
 	private String paymentTime;
 	
-	Payment(int nextPaymentID, String ticketID, String employeeID, String gateID, String amountPaid, String paymentMethod) {
-		this.paymentID = nextPaymentID;
+	public Payment(int paymentID, String ticketID, String employeeID, String gateID, String amountPaid, String paymentMethod) {
+		this.paymentID = paymentID;
 		this.ticketID = ticketID;
 		this.employeeID = employeeID;
 		this.gateID = gateID;

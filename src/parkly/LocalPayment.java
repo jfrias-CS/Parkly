@@ -9,13 +9,13 @@ public class LocalPayment {
 	private final String ticketID;
 	private final String employeeID;
 	private final String gateID;
+	private final String paymentDate;
+	private final String paymentTime;
 	private final double amountPaid;
 	private final String paymentMethod;
-	private String paymentDate;
-	private String paymentTime;
 	
-	LocalPayment(int nextPaymentID, String ticketID, String employeeID, String gateID, String paymentDate, String paymentTime, String paymentMethod, String amountPaid) {
-		this.paymentID = nextPaymentID;
+	LocalPayment(int paymentID, String ticketID, String employeeID, String gateID, String paymentDate, String paymentTime, String paymentMethod, String amountPaid) {
+		this.paymentID = paymentID;
 		this.ticketID = ticketID;
 		this.employeeID = employeeID;
 		this.gateID = gateID;
@@ -25,33 +25,19 @@ public class LocalPayment {
 		this.paymentTime = paymentTime;
 	}
 	
-	public String getPaymentID() {
-		return String.valueOf(this.paymentID);
-	}
+	public String getPaymentID() { return String.valueOf(this.paymentID); }
 	
-	public double getPaymentAmount() {
-		return amountPaid;
-	}
+	public String getTicketID() { return this.ticketID; }
 	
-	public String getPaymentMethod() {
-		return this.paymentMethod;
-	}
-	public String getPaymentDate() {
-		return this.paymentDate;
-	}
+	public String getEmployeeID() { return this.employeeID; }
 	
-	public String getPaymentTime() {
-		return this.paymentTime;
-	}
+	public String getGateID() { return this.gateID; }
 	
-	public String getEmployeeID() {
-		return this.employeeID;
-	}
-	public String getGateID() {
-		return this.gateID;
-	}
-	public String getTicketID() {
-		return this.ticketID;
-	}
+	public String getPaymentDate() { return this.paymentDate; }
 	
+	public String getPaymentTime() { return this.paymentTime; }
+	
+	public String getPaymentMethod() { return this.paymentMethod; }
+	
+	public double getPaymentAmount() { return this.amountPaid; }
 }

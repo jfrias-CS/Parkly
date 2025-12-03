@@ -59,7 +59,7 @@ public class Server {
 		// Singleton Services
 		private final TicketService ticketService = TicketService.getInstance();
 		private final PaymentService paymentService = PaymentService.getInstance();
-		
+		private final SpaceTracker spaceTracker = SpaceTracker.getInstance(10);
 		// constructor
 		public EmployeeHandler(int connectionCount, Socket socket) {
 			this.connectionID = connectionCount;
@@ -237,13 +237,19 @@ public class Server {
 			
 			// NEW TICKET: "ticket" "new ticket" gateId
 			else if (type.equalsIgnoreCase("TICKET") && status.equalsIgnoreCase("NEW TICKET")) {
-				String returnTicket = ticketService.generateNewTicket(text);
-				System.out.println("Returning ticket from server\n" + returnTicket);
-				this.oos.reset();
-				this.oos.writeObject(new Message("TICKET", "SUCCESS", returnTicket));
-				this.oos.flush();
-				System.out.println("TICKET SENT SUCCESS.");
-//				ticketResponse = null;
+				String returnTicket;
+				if (spaceTracker.isFull()) {
+					this.oos.reset();
+					this.oos.writeObject(new Message("TICKET", "FAILURE", "ERROR: MAX CAPACITY REACHED"));
+				} else {
+					// No issues
+					returnTicket = ticketService.generateNewTicket(text);
+					spaceTracker.increment();
+					System.out.println("Returning ticket from server\n" + returnTicket);
+					this.oos.reset();
+					this.oos.writeObject(new Message("TICKET", "SUCCESS", returnTicket));
+					this.oos.flush();
+				}
 			} 
 			
 			// FIND TICKET
@@ -270,7 +276,7 @@ public class Server {
 			    this.oos.flush();
 			}
 
-			// PAY TICKET
+			// MAKE PAYMENT
 			else if (type.equalsIgnoreCase("PAY TICKET") && status.equalsIgnoreCase("MAKE PAYMENT")) {
 				System.out.println("5. SERVER: Attempting to Pay ticket.");
 				if (text.isEmpty()) {
@@ -293,6 +299,7 @@ public class Server {
 				System.out.println("6. SERVER: PASSING ID TO PS.RP: " + ticketID);
 			    
 			    String returnPayment = paymentService.recordPayment(ticketID, payType, amountOwed, employeeID, exitGate);
+			    spaceTracker.decrement();
 			    if (returnPayment == null) {
 			    	this.oos.reset();
 					this.oos.writeObject(new Message("ERROR", "FAILURE", "TICKET NOT PAID."));
@@ -305,15 +312,21 @@ public class Server {
 			    this.oos.flush();
 			    
 			} 
-			
+			// GET PAYMENTS
+			else if (type.equalsIgnoreCase("PAYMENT LIST") && status.equalsIgnoreCase("REQUEST") && text.equalsIgnoreCase("PAYMENTS")) {
+				System.out.println("SERVER: Making payment list");
+				this.oos.reset();
+				this.oos.writeObject(new Message("PAYMENT LIST", "SUCCESS", paymentService.getPayments()));
+				this.oos.flush();
+			}
 			// Open Employees entry gate
 			// "GATE", "OPEN REQUEST", "G1_ENTRY
-			else if (type.equalsIgnoreCase("GATE") && status.equalsIgnoreCase("OPEN REQUEST")) {
+			else if (type.equalsIgnoreCase("ENTRY GATE") && status.equalsIgnoreCase("OPEN REQUEST")) {
 			    if (text.equalsIgnoreCase(this.entryGate.getGateId())) {
 			        System.out.println("OPENING GATE: " + this.entryGate.getGateId());
 			        this.entryGate.open();
 			        this.oos.reset();
-			        this.oos.writeObject(new Message("GATE", "SUCCESS", "GATE OPEN"));
+			        this.oos.writeObject(new Message("ENTRY GATE", "SUCCESS", "GATE OPEN"));
 			        this.oos.flush();
 			    } 
 //							System.out.println("Server.run (OPEN ENTRY GATE):\n\tOpening front gate...");
@@ -321,14 +334,36 @@ public class Server {
 			} 
 
 			// Close Employees entry gate
-			else if (type.equalsIgnoreCase("GATE") && status.equalsIgnoreCase("CLOSE REQUEST")) {
+			else if (type.equalsIgnoreCase("ENTRY GATE") && status.equalsIgnoreCase("CLOSE REQUEST")) {
 			    if (text.equalsIgnoreCase(this.entryGate.getGateId())) {
 			        System.out.println("CLOSING GATE: " + this.entryGate.getGateId());
 			        this.entryGate.close();
 			        this.oos.reset();
-			        this.oos.writeObject(new Message("GATE", "SUCCESS", "GATE CLOSED"));
+			        this.oos.writeObject(new Message("ENTRY GATE", "SUCCESS", "GATE CLOSED"));
 			        this.oos.flush();
 			    }
+			}
+			
+			// Open Employees exit gate
+			else if (type.equalsIgnoreCase("EXIT GATE") && status.equalsIgnoreCase("OPEN REQUEST")) {
+				if (text.equalsIgnoreCase(this.exitGate.getGateId())) {
+					System.out.println("OPENING GATE: " + this.exitGate.getGateId());
+					this.exitGate.close();
+					this.oos.reset();
+					this.oos.writeObject(new Message("EXIT GATE", "SUCCESS", "GATE OPEN"));
+					this.oos.flush();
+				}
+			}
+			
+			// Close Employees exit gate
+			else if (type.equalsIgnoreCase("EXIT GATE") && status.equalsIgnoreCase("CLOSE REQUEST")) {
+				if (text.equalsIgnoreCase(this.exitGate.getGateId())) {
+					System.out.println("CLOSING GATE: " + this.exitGate.getGateId());
+					this.exitGate.close();
+					this.oos.reset();
+					this.oos.writeObject(new Message("EXIT GATE", "SUCCESS", "GATE CLOSED"));
+					this.oos.flush();
+				}
 			}
 
 			else {

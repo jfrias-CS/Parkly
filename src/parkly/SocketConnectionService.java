@@ -62,7 +62,7 @@ public class SocketConnectionService {
 			System.out.println("SCS.findTicket: Finding ticket...");
 			String returnedTicket = socket.findTicket(ticketID);
 			if (returnedTicket != null) {
-				System.out.println("SCS.findTicket: Returning ticket: " + returnedTicket);				
+				System.out.println("SCS.findTicket: Returning ticket:\n" + returnedTicket);				
 			} else {
 				System.out.println("SCS.findTicket: Ticket not found (returning null).");
 			}
@@ -80,7 +80,7 @@ public class SocketConnectionService {
 			if (returnedTickets != null) {
 				System.out.println("SCS.getActiveTickets: Returning tickets...");				
 			} else {
-				System.out.println("SCS.getActiveTickets: Ticket not found (returning null).");
+				System.out.println("SCS.getActiveTickets: Tickets not found (returning null).");
 			}
 			return returnedTickets;
 		} else {
@@ -107,8 +107,35 @@ public class SocketConnectionService {
 		}
 	}
 	
+	public static String getPayments() {
+		if (socket != null) {
+			System.out.println("SCS.getPayments: Getting payments...");
+			
+			String returnedPayments = socket.getPayments();
+			if (returnedPayments != null) {
+				System.out.println("SCS.getPayments: Returning payments...");
+			} else {
+				System.out.println("SCS.getPayments: Payments not found...");
+				return null;
+			}
+			return returnedPayments;
+		} else {
+			System.err.println("SCS.getPayments: Not connected.");
+			return null;
+		}
+	}
 	
 	public static String openEntryGate(String entryGateId) {
+		if (socket != null) {
+			System.out.println("SCS.openEntryGate: Sending open entry gate message...");
+			return socket.openEntryGate(entryGateId);
+		} else {
+			System.err.println("SCS.openEntryGate: Not connected.");
+			return "SCS: Not connected.";
+		}
+	}
+	
+	public static String closeEntryGate(String entryGateId) {
 		if (socket != null) {
 			System.out.println("SCS.openEntryGate: Sending open entry gate message...");
 			return socket.openEntryGate(entryGateId);
@@ -121,7 +148,19 @@ public class SocketConnectionService {
 	public static String openExitGate(String gateId) {
 		if (socket != null) {
 			System.out.println("SCS.openEntryGate: Sending open entry gate message...");
-			return socket.openExitGate(gateId);
+			String returnStatus = socket.openExitGate(gateId);
+			System.out.println("SCS.openExitGate: " + returnStatus);
+			return returnStatus;
+		} else {
+			System.err.println("SCS.openEntryGate: Not connected.");
+			return "SCS: Not connected.";
+		}
+	}
+	
+	public static String closeExitGate(String entryGateId) {
+		if (socket != null) {
+			System.out.println("SCS.openEntryGate: Sending open entry gate message...");
+			return socket.openEntryGate(entryGateId);
 		} else {
 			System.err.println("SCS.openEntryGate: Not connected.");
 			return "SCS: Not connected.";

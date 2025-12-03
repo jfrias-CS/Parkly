@@ -35,9 +35,10 @@ public class EmployeeGUI {
 	private static JLabel dateTimeLabel;
 	private static Timer timer;
 	private static JButton openEntryGateButton;
+	private static JButton viewActiveTicketsButton;
 	private static JButton payFeesButton;
+	private static JButton viewPaymentsButton;
 	private static JButton openExitGateButton;
-	private static JButton viewActiveTickets;
 	private EmployeeService es;
 	
 	void createEmployeeDashboard(EmployeeService es) {
@@ -87,14 +88,14 @@ public class EmployeeGUI {
 		
 		
 		// View Valid Tickets
-		viewActiveTickets = new JButton("🎟 View Active Tickets️");
-		viewActiveTickets.setAlignmentX(Component.CENTER_ALIGNMENT); // Center buttons in the box layout
-		viewActiveTickets.setMaximumSize(new Dimension(200, 40)); // Standardize size
-		viewActiveTickets.addActionListener(new ActionListener() {
+		viewActiveTicketsButton = new JButton("🎟 View Active Tickets️");
+		viewActiveTicketsButton.setAlignmentX(Component.CENTER_ALIGNMENT); // Center buttons in the box layout
+		viewActiveTicketsButton.setMaximumSize(new Dimension(300, 40)); // Standardize size
+		viewActiveTicketsButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("EmployeeGUI: View Active Tickets.");
-				appendServerMessage("Active Tickets:");
+				appendServerMessage("Active Tickets Start:");
 				Map<String, LocalTicket> activeTicketsMap = es.getLocalActiveTickets();
 				EmployeeGUI.appendServerMessage("Size: " + activeTicketsMap.size());
 
@@ -110,19 +111,22 @@ public class EmployeeGUI {
 			          + "\tEntryTime: " + current.getEntryTime() + "\n"
 			        );
 			    }
+			    appendServerMessage("Active Tickets End.");
 			}
 		});
 		
 		// Open entry gate button
 		// Generate ticket along with opening gate
-		openEntryGateButton = new JButton("🚪 Open Entrance Gate");
+		openEntryGateButton = new JButton("🚪 Open Entry Gate + Make New Ticket");
 		openEntryGateButton.setAlignmentX(Component.CENTER_ALIGNMENT); // Center buttons in the box layout
-		openEntryGateButton.setMaximumSize(new Dimension(200, 40)); // Standardize size
+		openEntryGateButton.setMaximumSize(new Dimension(300, 40)); // Standardize size
 		openEntryGateButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("EmployeeGUI: Open Gate and Create Ticket.");
 				LocalTicket newTicket = es.generateTicket();
+				if (newTicket != null) {
+					
 				openEntryGateButton.setEnabled(false);
 				EmployeeGUI.appendServerMessage("TICKET REQUESTED");
 				String serverMessage = "Ticket ID: " + newTicket.getTicketID() + "\n\tEmployee: " + newTicket.getEmployeeID() + "\n\tGate: " + newTicket.getGateID() + "\tEnrty Date: " + newTicket.getEntryDate() + "\n\t"
@@ -132,33 +136,70 @@ public class EmployeeGUI {
 				EmployeeGUI.appendServerMessage(serverMessage);
 				openEntryGateButton.setEnabled(true);
 				es.openEntryGate();
+				} else {
+					openEntryGateButton.setEnabled(true);
+				}
 //				EmployeeGUI.appendServerMessage("EmployeeGUI: Gate Status: " + gateStatus);
 			}
 		});
 		
+		viewPaymentsButton = new JButton ("💸View Payments");
+		viewPaymentsButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+		viewPaymentsButton.setMaximumSize(new Dimension(300, 40));
+		viewPaymentsButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("EmployeeGUI: View Payments.");
+				appendServerMessage("Payments: ");
+				Map<String, LocalPayment> payments = es.getLocalPayments();
+				EmployeeGUI.appendServerMessage("Size: " + payments.size());
+
+			    // 2. Iterate through the map's values (the LocalTicket objects)
+			    for (LocalPayment current : payments.values()) {
+			        
+			        // 3. Display the details using the getters
+			        EmployeeGUI.appendServerMessage(
+			            "\tPayment ID: " + current.getTicketID() + "\n"
+			          + "\tEmployeeID: " + current.getEmployeeID() + "\n"
+			          + "\tGateID: " + current.getGateID() + "\n"
+			          + "\tEntry Date: " + current.getPaymentDate() + "\n"
+			          + "\tEntry Time: " + current.getPaymentTime() + "\n"
+			          + "\tPayment Type: " + current.getPaymentMethod() + "\n"
+			          + "\tPayment Amount: " + current.getPaymentAmount() + "\n"
+			        );
+			    }
+			}
+		});
 		// Pay fees
-		payFeesButton = new JButton("💳 Pay Fees / Lookup Ticket");
+		payFeesButton = new JButton("💳Lookup Ticket + Pay Fees");
 		payFeesButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-		payFeesButton.setMaximumSize(new Dimension(200, 40));
+		payFeesButton.setMaximumSize(new Dimension(300, 40));
 		payFeesButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				FeeGUI feePaymentWindow = new FeeGUI(mainFrame, es);
 				feePaymentWindow.setVisible(true);
-				feePaymentWindow.getProcessedTicket();
+//				feePaymentWindow.getProcessedTicket();
 			}
 		});
 		
 		// Open exit gate button
 		openExitGateButton = new JButton("🚧 Open Exit Gate");
 		openExitGateButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-		openExitGateButton.setMaximumSize(new Dimension(200, 40));
-		// TODO: Add ActionListener for the exit gate logic (RELEASE TICKET)
+		openExitGateButton.setMaximumSize(new Dimension(300, 40));
+		openExitGateButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				OpenGateGUI openGateWindow = new OpenGateGUI(mainFrame, es);
+				openGateWindow.setVisible(true);
+//				openGateWindow.getProcessedTicket();
+			}
+		});
 		
 		// Logout button
 		logoutButton = new JButton("❌ Logout");
 		logoutButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-		logoutButton.setMaximumSize(new Dimension(200, 40));
+		logoutButton.setMaximumSize(new Dimension(300, 40));
 		logoutButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -179,11 +220,13 @@ public class EmployeeGUI {
 		});
 		// Add vertical spacing between buttons
 		controlPanel.add(Box.createVerticalStrut(15));
-		controlPanel.add(viewActiveTickets);
+		controlPanel.add(viewActiveTicketsButton);
 		controlPanel.add(Box.createVerticalStrut(15));
 		controlPanel.add(openEntryGateButton);
 		controlPanel.add(Box.createVerticalStrut(15));
 		controlPanel.add(payFeesButton);
+		controlPanel.add(Box.createVerticalStrut(15));
+		controlPanel.add(viewPaymentsButton);
 		controlPanel.add(Box.createVerticalStrut(15));
 		controlPanel.add(openExitGateButton);
 		controlPanel.add(Box.createVerticalStrut(30)); // Extra space before logout
