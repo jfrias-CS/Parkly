@@ -3,6 +3,7 @@ package parkly;
 
 import java.util.List;
 
+// unused
 public class Report implements ObjectTag {
     private static final long serialVersionUID = 1L;
 

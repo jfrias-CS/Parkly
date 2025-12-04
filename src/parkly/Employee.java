@@ -3,6 +3,8 @@ package parkly;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+// Used to store Employee Login & Lgout times
+// Assign employee to gate pairs to track their operations
 public class Employee {
 	private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm");
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("M/d/yyyy");

@@ -16,18 +16,12 @@ public class OpenGateGUI extends JDialog {
 	private final JPanel detailsPanel;
 	private JTextArea ticketDetailsArea; 
 	private JLabel feeLabel;
-	
-    // Removed unused payment components (reasonForOpeningText, payTypeCombo, payButton, processPayment)
-    // Removed PayTicketTask since payment logic moves to FeeGUI
-
 	private String ticket; 
-    
-    // --- NEW COMPONENTS for Gate Control ---
     private JButton mainActionButton;
     private JButton overrideButton;
     private JTextField overrideReasonText;
     
-    // --- Local copy of the found ticket ---
+    // Local copy of the found ticket
     private LocalTicket currentTicket;
 
 
@@ -69,7 +63,7 @@ public class OpenGateGUI extends JDialog {
 		
 		mainPanel.add(searchPanel, BorderLayout.NORTH);
 		
-		// --- Center Details Panel (Dynamically populated) ---
+		// Center Details Panel (Dynamically populated)
 		detailsPanel = new JPanel(new GridBagLayout()); 
         detailsPanel.setBorder(BorderFactory.createTitledBorder("Ticket Information & Gate Control"));
         mainPanel.add(detailsPanel, BorderLayout.CENTER);
@@ -77,7 +71,7 @@ public class OpenGateGUI extends JDialog {
 		this.getContentPane().add(mainPanel);
 		this.pack();
 		
-		// --- Action Listener ---
+		// Action Listener
 		searchTicketButton.addActionListener(e -> {
 			String searchTicketInput = searchTicketText.getText().trim();
 			if (!searchTicketInput.isEmpty()) {
@@ -94,10 +88,9 @@ public class OpenGateGUI extends JDialog {
 		new TicketSearchTask(input).execute();
 	}
 
-	/**
-     * Dynamically displays ticket details and the appropriate action controls 
-     * based on the ticket's paid status.
-     */
+     // Dynamically displays ticket details and the appropriate action controls 
+     // based on the ticket's paid status.
+     
 	private void displayTicketDetails(LocalTicket foundTicket) {
 		detailsPanel.removeAll();
         this.currentTicket = foundTicket; // Store the ticket locally
@@ -108,7 +101,7 @@ public class OpenGateGUI extends JDialog {
         
 		System.out.println("TICKET RECEIVED: " + foundTicket.getTotalTime());
 		
-		// 1. Ticket Details Section 
+		// Ticket Details Section 
         String detailsText = String.format(
             "Ticket ID: %s\n" +
             "Entry Date: %s | Entry Time: %s\n" +
@@ -133,7 +126,7 @@ public class OpenGateGUI extends JDialog {
         scrollPane.setPreferredSize(new Dimension(300, 100));
         detailsPanel.add(scrollPane, gbc);
         
-		// 2. Fees Due Label
+		// Fees Due Label
         boolean isTicketPaid = foundTicket.isPaid();
 		int fee = foundTicket.getTotalFees();
 		double feeDouble = (double) fee;
@@ -152,7 +145,7 @@ public class OpenGateGUI extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         detailsPanel.add(feeLabel, gbc);
         
-		// 3. Conditional Action Panel
+		// Conditional Action Panel
 		JPanel actionPanel = new JPanel(new GridBagLayout());
         
         // Use separate GBC for actionPanel components
@@ -173,19 +166,8 @@ public class OpenGateGUI extends JDialog {
             mainActionButton.addActionListener(e -> openGate(foundTicket.getTicketID(), false)); // Normal open
             actionPanel.add(mainActionButton, actionGBC);
             
-            // Override Controls
-//            overrideButton = new JButton("🚨 OVERRIDE OPEN GATE (Ticket Paid)");
-//            overrideButton.setBackground(Color.RED.darker());
-//            overrideButton.setForeground(Color.BLACK);
-//            overrideButton.setOpaque(true);
-//            overrideButton.setBorderPainted(false);
-//            overrideButton.addActionListener(e -> openGate(foundTicket.getTicketID(), true)); // Override open
-//            overrideButton.addActionListener(e -> promptForOverrideReason(foundTicket.getTicketID()));
-//            actionGBC.gridy = 1;
-//            actionPanel.add(overrideButton, actionGBC);
-            
         } else {
-            // --- Unpaid: Show Pay Fees Button and Override Controls ---
+            //Unpaid: Show Pay Fees Button and Override Controls
             mainActionButton = new JButton("💳 Pay Ticket Fees");
             mainActionButton.setBackground(new Color(0, 123, 255)); // Blue
             mainActionButton.setForeground(Color.WHITE);
@@ -195,7 +177,7 @@ public class OpenGateGUI extends JDialog {
             mainActionButton.addActionListener(e -> openFeeGUI(foundTicket)); // Open FeeGUI
             actionPanel.add(mainActionButton, actionGBC);
             
-            // Override Controls
+            // Override Gate Controls
             overrideButton = new JButton("🚨 OVERRIDE OPEN GATE (Fees Due)");
             overrideButton.setBackground(Color.RED.darker());
             overrideButton.setForeground(Color.WHITE);
@@ -221,18 +203,14 @@ public class OpenGateGUI extends JDialog {
 		return this.ticket;
 	}
 	
-    // --- NEW METHOD: Open Fee GUI ---
+    // Open Fee GUI
     private void openFeeGUI(LocalTicket ticket) {
         // Create and show the FeeGUI dialog, passing the current ticket.
-        FeeGUI newWindow = new FeeGUI(null, es); // Assuming FeeGUI constructor needs an owner JFrame and ES
-        // You might need to adjust FeeGUI to automatically load the ticket.
-        // For simplicity, we'll just show the window. The employee will have to search again.
-        // BEST PRACTICE: Pass the ticket ID to FeeGUI so it searches automatically.
+        FeeGUI newWindow = new FeeGUI(null, es);
         newWindow.setVisible(true);
-        // After payment is processed in FeeGUI, the employee would typically re-search the ticket here.
     }
     
-    // --- NEW METHOD: Prompt for Override Reason ---
+    // Prompt for Override Reason
     private void promptForOverrideReason(String ticketID) {
          String reason = JOptionPane.showInputDialog(this, "Enter reason for overriding the gate open (e.g., system error, lost ticket):", "Gate Override Reason", JOptionPane.WARNING_MESSAGE);
          
@@ -243,7 +221,7 @@ public class OpenGateGUI extends JDialog {
          }
     }
     
-    // --- NEW METHOD: Call Open Gate Task ---
+    // Call Open Gate Task
     private void openGate(String ticketID, boolean isOverride) {
         openGate(ticketID, isOverride, isOverride ? "Gate Override" : "Ticket Paid");
     }
@@ -300,7 +278,7 @@ public class OpenGateGUI extends JDialog {
 		}
 	}
 	
-    // --- NEW SwingWorker: OpenGateTask ---
+    // OpenGateTask
 	private class OpenGateTask extends SwingWorker<Boolean, Void> {
 		private final String ticketID;
         private final boolean isOverride;
@@ -316,12 +294,11 @@ public class OpenGateGUI extends JDialog {
 		}
 		@Override
 		protected Boolean doInBackground() throws Exception {
-            // 1. Log the action (Optional, but good practice)
             System.out.printf("OpenGateGUI: Attempting to open gate for Ticket %s. Override: %s, Reason: %s%n", ticketID, isOverride, reason);
 
-            // 2. Call the server method
+            // Call the server method
 //			boolean success = es.openExitGate(ticketID, isOverride, reason);
-            es.openExitGate();
+            boolean success = es.openExitGate();
 			boolean success = true;
 			if (success) {
 				return true;
@@ -354,5 +331,3 @@ public class OpenGateGUI extends JDialog {
 		}
 	}
 }
-// Note: The OpenGateTask above assumes es.openExitGate() exists and accepts (String ticketID, boolean isOverride, String reason).
-// You will need to implement this method signature in your EmployeeService.

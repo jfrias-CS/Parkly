@@ -19,10 +19,9 @@ public class FeeGUI extends JDialog {
 	private JButton payButton;
 	private String ticket; // For Finding and returning the result
 	
-    // --- Modernization: Look and Feel setup (Optional, call once at application start) ---
     public static void setLookAndFeel() {
         try {
-            // Use the Nimbus L&F for a modern look
+            // Used Nimbus L&F for a modern look
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     UIManager.setLookAndFeel(info.getClassName());
@@ -42,18 +41,17 @@ public class FeeGUI extends JDialog {
 	public FeeGUI(JFrame owner, EmployeeService es) {
 		super(owner, "Pay Parking Fees", ModalityType.APPLICATION_MODAL);
 		this.es = es;
-        // 1. Modernize Initial Setup
-        // setLookAndFeel(); // Call this once in your main application entry point
+         setLookAndFeel(); // Call this once in your main application entry point
 
-		this.setSize(600, 450); // Increase size for better spacing
+		this.setSize(600, 450);
 		this.setLocationRelativeTo(owner);
 		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		
-		mainPanel = new JPanel(new BorderLayout(15, 15)); // Use BorderLayout for main structure
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15)); // Add padding
-
-        // --- Top Search Panel ---
-		JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10)); // Use FlowLayout for alignment
+		mainPanel = new JPanel(new BorderLayout(15, 15));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15)); 
+        
+        // Top Search Panel
+		JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10)); 
         JLabel searchTicketLabel = new JLabel("💳 Enter Ticket ID:");
 		searchTicketText = new JTextField(15);
 		searchTicketButton = new JButton("🔍 Search Ticket");
@@ -64,7 +62,7 @@ public class FeeGUI extends JDialog {
 		
 		mainPanel.add(searchPanel, BorderLayout.NORTH);
 		
-		// --- Center Details Panel (Dynamically populated) ---
+		// Center Details Panel (Dynamically populated)
 		detailsPanel = new JPanel(new GridBagLayout()); // Use GridBagLayout for flexible internal layout
         detailsPanel.setBorder(BorderFactory.createTitledBorder("Ticket Information & Payment"));
         mainPanel.add(detailsPanel, BorderLayout.CENTER);
@@ -72,7 +70,7 @@ public class FeeGUI extends JDialog {
 		this.getContentPane().add(mainPanel);
 		this.pack();
 		
-		// --- Action Listener (Modernized with Lambda) ---
+		// Search for ticket listener
 		searchTicketButton.addActionListener(e -> {
 			String searchTicketInput = searchTicketText.getText().trim();
 			if (!searchTicketInput.isEmpty()) {
@@ -98,7 +96,7 @@ public class FeeGUI extends JDialog {
         
 		System.out.println("TICKET RECEIVED: " + foundTicket.getTotalTime());
 		
-		// 1. Ticket Details Section (Using a JTextArea inside a JScrollPane)
+		// Ticket Details Section (Using a JTextArea inside a JScrollPane)
         String detailsText = String.format(
             "Ticket ID: %s\n" +
             "Entry Date: %s | Entry Time: %s\n" +
@@ -123,7 +121,7 @@ public class FeeGUI extends JDialog {
         scrollPane.setPreferredSize(new Dimension(300, 100));
         detailsPanel.add(scrollPane, gbc);
         
-		// 2. Fees Due Label
+		// Fees Due Label
         boolean isTicketPaid = foundTicket.isPaid();
 		int fee = foundTicket.getTotalFees();
 		double feeDouble = (double) fee;
@@ -140,10 +138,9 @@ public class FeeGUI extends JDialog {
         
         gbc.gridy = 1;
         gbc.fill = GridBagConstraints.NONE;
-//        detailsPanel.add(feeLabel);
         detailsPanel.add(feeLabel, gbc);
         
-		// 3. Payment Input Fields
+		// Payment Input Fields
 		JPanel paymentPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
 		
         // Amount Paid Field
@@ -161,7 +158,7 @@ public class FeeGUI extends JDialog {
         gbc.gridy = 2;
         detailsPanel.add(paymentPanel, gbc);
 		
-		// 4. Payment button (Use a new look for the button)
+		// Payment button
 		payButton = new JButton("✅ Process Payment");
         payButton.setBackground(new Color(0, 123, 255)); // Blue background
         payButton.setForeground(Color.BLACK);
@@ -184,12 +181,10 @@ public class FeeGUI extends JDialog {
 		this.pack();
 	}
 	
-	public String getProcessedTicket() {
-		return this.ticket;
-	}
-	
+
+	// Process payment
 	private void processPayment(LocalTicket paidTicket) {
-		// Finalized payment logic
+		// payment logic
 		String payType = (String) payTypeCombo.getSelectedItem();
 		double amount = 0.0;
         try {
@@ -201,8 +196,6 @@ public class FeeGUI extends JDialog {
 		
         payButton.setEnabled(false);
         new PayTicketTask(paidTicket, payType, amount).execute();
-//		JOptionPane.showMessageDialog(this, String.format("Payment of $%.2f successful via %s!", amount, payType), "Payment Success", JOptionPane.INFORMATION_MESSAGE);
-//		this.dispose();
 	}
 	
 
@@ -233,12 +226,8 @@ public class FeeGUI extends JDialog {
 			searchTicketButton.setEnabled(true); // reactivate search button
 			try {
 				LocalTicket foundTicket = get();
-//				System.out.println("FeeGUI.done: received ticket: " + foundTicket);
 				displayTicketDetails(foundTicket);
 				
-//				if (foundTicket.isPaid()) {
-//					JOptionPane.showMessageDialog(FeeGUI.this, "Ticket " + foundTicket.getTicketID() + " had already been paid.", "Status Check", JOptionPane.WARNING_MESSAGE);
-//				}
 			} catch (Exception e) {
 				String fullErrorMessage = e.getMessage();
 				String prefixToRemove = "java.lang.Exception: ";
@@ -277,14 +266,11 @@ public class FeeGUI extends JDialog {
 			System.out.println("1. FEEGUI: START OF PAYMENT PROCESS");
 			LocalPayment ticketPaidSuccessfully = es.makePayment(payTicket, payType, amount);
 			Thread.sleep(200);
-//			System.out.println("Ticket ID: " + ticket.getTicketID() + "| Ticket paid: " + ticket.isPaid());
-			System.out.println(ticketPaidSuccessfully);
-			System.out.println("17. PAYMENT RETURNED");
+//			System.out.println(ticketPaidSuccessfully);
 			if (ticketPaidSuccessfully != null) {
 				return true;
 			} else {
 				return false;
-//				throw new Exception("Ticket was not processed.");
 			}
 		}
 		@Override
@@ -294,12 +280,13 @@ public class FeeGUI extends JDialog {
 			try {
 				if (get()) {
 					ticket = payTicket;
+					// If ticket is paid successful display message box
 					JOptionPane.showMessageDialog(FeeGUI.this, String.format("Payment of $%.2f successful via %s!", amount, payType), "Payment Success", JOptionPane.INFORMATION_MESSAGE);
-//					FeeGUI.this.dispose();
 					searchTicket(payTicket);
 				}
 			} catch (Exception e) {
 				String message = "Payment failed due to a network or server error.";
+				// display failure to pay ticket
 				JOptionPane.showMessageDialog(FeeGUI.this, message, "Payment Error", JOptionPane.ERROR_MESSAGE);
 				e.printStackTrace();
 			}

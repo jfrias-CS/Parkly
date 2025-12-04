@@ -48,24 +48,20 @@ public class EmployeeGUI {
 		// Main container
 		mainFrame = new JFrame("PARKLY EMPLOYEE DASHBOARD 🅿️");
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		// MODERNIZE: Use a larger default size for a dashboard feel
 		mainFrame.setSize(900, 700); 
 		mainFrame.setPreferredSize(new Dimension(900, 700));
 		mainFrame.setLocationRelativeTo(null);
 		
 		// Main panel to hold sub panels
-		// MODERNIZE: Use BorderLayout for main structure (Header, Center, Footer)
 		panel = new JPanel(new BorderLayout(10, 10));
 		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
 
 		
-		// --- 1. NORTH (Header/Image/DateTime) ---
+		// NORTH (Header/Image/DateTime)
 		JPanel headerPanel = new JPanel(new BorderLayout(20, 0)); // Panel for icon and clock
 		
 		imagePanel = new JPanel(); // hold image icon label
-		// MODERNIZE: Load the image icon using a safe resource path if possible
 		parklyImageIcon = new ImageIcon("images/Parkly_Icon.png"); // hold software icon
-		// MODERNIZE: Scale the icon down for a header logo size
 		scaledIcon = parklyImageIcon.getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH); // re-scale image icon
 		parklyImageIcon = new ImageIcon(scaledIcon); // reset image to re-scaled size
 		imageIconLabel = new JLabel(parklyImageIcon);
@@ -82,9 +78,8 @@ public class EmployeeGUI {
 		panel.add(headerPanel, BorderLayout.NORTH);
 
 
-		// --- 2. WEST (Control Buttons) ---
+		// WEST (Control Buttons)
 		JPanel controlPanel = new JPanel();
-		// MODERNIZE: Use BoxLayout Y_AXIS for vertical stacking of buttons
 		controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
 		controlPanel.setBorder(BorderFactory.createTitledBorder("Gate & Transaction Controls"));
 		
@@ -118,11 +113,7 @@ public class EmployeeGUI {
 				appendServerMessage("Active Tickets Start:");
 				Map<String, LocalTicket> activeTicketsMap = es.getLocalActiveTickets();
 				EmployeeGUI.appendServerMessage("Size: " + activeTicketsMap.size());
-
-			    // 2. Iterate through the map's values (the LocalTicket objects)
 			    for (LocalTicket current : activeTicketsMap.values()) {
-			        
-			        // 3. Display the details using the getters
 			        EmployeeGUI.appendServerMessage(
 			            "\tTicket ID: " + current.getTicketID() + "\n"
 			          + "\tEmployeeID: " + current.getEmployeeID() + "\n"
@@ -135,8 +126,7 @@ public class EmployeeGUI {
 			}
 		});
 		
-		// Open entry gate button
-		// Generate ticket along with opening gate
+		// Open entry gate button + Generate ticket
 //		openEntryGateButton = new JButton("🚪 Open Entry Gate + Make New Ticket");
 		openEntryGateButton = new JButton("Open Entry Gate + Make New Ticket");
 		openEntryGateButton.setAlignmentX(Component.CENTER_ALIGNMENT); // Center buttons in the box layout
@@ -159,7 +149,6 @@ public class EmployeeGUI {
 				} else {
 					openEntryGateButton.setEnabled(true);
 				}
-//				EmployeeGUI.appendServerMessage("EmployeeGUI: Gate Status: " + gateStatus);
 			}
 		});
 		
@@ -174,11 +163,7 @@ public class EmployeeGUI {
 				appendServerMessage("Payments: ");
 				Map<String, LocalPayment> payments = es.getLocalPayments();
 				EmployeeGUI.appendServerMessage("Size: " + payments.size());
-
-			    // 2. Iterate through the map's values (the LocalTicket objects)
 			    for (LocalPayment current : payments.values()) {
-			        
-			        // 3. Display the details using the getters
 			        EmployeeGUI.appendServerMessage(
 			            "\tPayment ID: " + current.getTicketID() + "\n"
 			          + "\tEmployeeID: " + current.getEmployeeID() + "\n"
@@ -191,6 +176,7 @@ public class EmployeeGUI {
 			    }
 			}
 		});
+		
 		// Pay fees
 //		payFeesButton = new JButton("💳Lookup Ticket + Pay Fees");
 		payFeesButton = new JButton("Lookup Ticket + Pay Fees");
@@ -205,7 +191,7 @@ public class EmployeeGUI {
 			}
 		});
 		
-		// Open exit gate button
+		// Open Exit Gate Button
 //		openExitGateButton = new JButton("🚧 Open Exit Gate");
 		openExitGateButton = new JButton("Open Exit Gate");
 		openExitGateButton.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -220,7 +206,7 @@ public class EmployeeGUI {
 		});
 		
 		
-		
+		// Report Button not functional yet
 		/*
 		reportButton = new JButton("Generate Report");
 		reportButton.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -272,6 +258,7 @@ public class EmployeeGUI {
 		            JOptionPane.INFORMATION_MESSAGE);
 		});
 		*/
+		
 		// Logout button
 //		logoutButton = new JButton("❌ Logout");
 		logoutButton = new JButton("Logout");
@@ -295,6 +282,8 @@ public class EmployeeGUI {
 				}
 			}
 		});
+		
+		// Add buttons to Panel
 		// Add vertical spacing between buttons
 		controlPanel.add(Box.createVerticalStrut(15));
 		controlPanel.add(spaceTrackerButton);
@@ -317,12 +306,11 @@ public class EmployeeGUI {
 		panel.add(controlPanel, BorderLayout.WEST);
 		
 		
-		// --- 3. CENTER & SOUTH (Server Console and Manual Input) ---
+		// CENTER & SOUTH (Server Console and Manual Input)
 		
 		JPanel consoleAndInputPanel = new JPanel(new BorderLayout(5, 5));
-		
-		// displayServerPanel to show text (Console Area)
-//		displayServerPanel = new JPanel(new GridLayout(1, 2)); // panel to show text
+
+		// Display Communication Panel
 		displayServerPanel = new JPanel(new BorderLayout());
 		displayServerPanel.setBorder(BorderFactory.createTitledBorder("Server Communication Console"));
 		
@@ -338,7 +326,7 @@ public class EmployeeGUI {
 		consoleAndInputPanel.add(displayServerPanel, BorderLayout.CENTER);
 		
 		
-		// User input text panel (South)
+		// South User input text panel
 //		inputTextPanel = new JPanel(new GridLayout(3, 1)); // panel to send messages
 		inputTextPanel = new JPanel(new BorderLayout(5, 5));
 		inputTextPanel.setBorder(BorderFactory.createTitledBorder("Manual Command (Dev/Test)"));
@@ -388,7 +376,6 @@ public class EmployeeGUI {
 			            System.err.println("Error during socket disconnection, proceeding with exit: " + e.getMessage());
 			        }
 			        mainFrame.dispose();
-			        // **CRITICAL:** Call System.exit(0) to forcefully terminate the JVM.
 			        System.exit(0);
 			        
 			    }
@@ -404,7 +391,6 @@ public class EmployeeGUI {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				LocalDateTime now = java.time.LocalDateTime.now();
-				// MODERNIZE: Use a more readable format for the clock
 				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy | HH:mm:ss"); 
 				String formattedDateTime = now.format(formatter);
 				dateTimeLabel.setText(formattedDateTime);

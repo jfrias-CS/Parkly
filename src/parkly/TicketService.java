@@ -10,9 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 // singleton
 public class TicketService {
-	// --- CONSTANTS ---
 	private static final String TICKET_DELIMITER = "\n"; // Unique separator between tickets
-	
 	private static int nextTicketID;
 	private static synchronized int getNextTicketID() {return nextTicketID++;};
 	private static final TicketService instance = new TicketService();
@@ -28,13 +26,6 @@ public class TicketService {
 		return instance;
 	}
 	
-	// ------------------------------------------------------------------
-	// REFRACTORED: getActiveTickets()
-	// Returns a single long string containing all active Ticket data, separated by TICKET_DELIMITER.
-	// ------------------------------------------------------------------
-	// ------------------------------------------------------------------
-	// FIXED: getActiveTickets() - Uses pre-pending delimiter logic
-	// ------------------------------------------------------------------
 	public String getActiveTickets() {
 	    StringBuilder allTicketsString = new StringBuilder();
 	    boolean first = true; // Flag to track the first iteration
@@ -56,7 +47,7 @@ public class TicketService {
 	    return allTicketsString.toString();
 	}
 	
-	// generateNewTicket remains the same, as it calls toString().
+	// Generate new ticket object
 	public String generateNewTicket(String ticketData) {
 		if (ticketData != null) {
 			String[] parts = ticketData.split("\\|");
@@ -74,6 +65,7 @@ public class TicketService {
 		return "ERROR: GENERATING NEW STRING";
 	}
 	
+	// sort method for list of ticket array
 	private void sortPaidList() {
 		synchronized (paidTickets) {
 			Collections.sort(paidTickets, new Comparator<Ticket>() {
@@ -84,7 +76,7 @@ public class TicketService {
 		}
 	}
 	
-	// findTicketAsString() remains the same, as it calls toString().
+	// findTicketAsString returns string version of ticket
 	public String findTicketAsString(String ticketID) {
 		Ticket ticket = allTickets.get(ticketID); 
 		
@@ -95,6 +87,7 @@ public class TicketService {
 		return null;
 	}
 	
+	// returns actual ticket 
 	public Ticket findTicket(String ticketID) {
 		Ticket ticket = activeTickets.get(ticketID);
 		if (ticket != null) {
@@ -104,6 +97,7 @@ public class TicketService {
 		return null;
 	}
 	
+	// set ticket exit stamp
 	public void setExitStamp (String ticketID) {
 		Ticket foundTicket = findTicket(ticketID);
 		if (foundTicket != null && !foundTicket.isPaid()) {
@@ -111,6 +105,7 @@ public class TicketService {
 		}
 	}
 	
+	// mark ticket as paid
 	public boolean markTicketPaid (String ticketID) {
 		Ticket foundTicket = this.findTicket(ticketID);
 		if (foundTicket == null) {
@@ -125,6 +120,7 @@ public class TicketService {
 		return false;
 	}
 	
+	// delete ticket from active tickets, move to paid tickets
 	private void removeTicketFromList (Ticket ticket) {
 		synchronized(paidTickets) {
 			paidTickets.add(ticket);
@@ -135,7 +131,7 @@ public class TicketService {
 		System.out.println("10. Added ticket to paid ticket and removed it form active tickets.");
 	}
 	
-	// toString() remains the same.
+	// convert ticket data to string to send client side
 	public String toString(Ticket ticket) {
 		System.out.println("toString Called.");
 		String result;

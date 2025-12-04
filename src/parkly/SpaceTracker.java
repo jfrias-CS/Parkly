@@ -7,27 +7,18 @@ package parkly;
  */
 public class SpaceTracker {
     
-    // 1. Static volatile instance variable
+    // Static volatile instance variable
     // 'volatile' ensures visibility of changes across threads.
     private static volatile SpaceTracker instance;
 
     private final int capacity;
     private int currentCount;
 
-    // 2. Private Constructor: Prevents external instantiation.
+    // Private Constructor: Prevents external instantiation.
     private SpaceTracker(int capacity) {
         this.capacity = capacity;
         this.currentCount = 0;
     }
-
-    /**
-     * Global access point for the Singleton instance.
-     * Uses Double-Checked Locking (DCL) for thread-safe, lazy initialization.
-     * The capacity is only set on the very first call.
-     *
-     * @param capacity The total capacity of the parking lot. Only used on the first call.
-     * @return The single instance of SpaceTracker.
-     */
     public static SpaceTracker getInstance(int capacity) {
         if (instance == null) {
             // Synchronize only the first time when the instance might be null
@@ -41,7 +32,7 @@ public class SpaceTracker {
         return instance;
     }
 
-    // --- Core Operations (Thread-Safe using synchronized) ---
+    // Synchronized to make sure calls are all in sequence
 
     public synchronized void increment() {
         if (currentCount < capacity) {

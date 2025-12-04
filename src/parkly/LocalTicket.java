@@ -1,12 +1,6 @@
 package parkly;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.Objects;
-import java.io.Serializable;
-
+// Local version of ticket object (client side)
 public class LocalTicket {
 	private final int ticketID; 
 	private final String employeeID;

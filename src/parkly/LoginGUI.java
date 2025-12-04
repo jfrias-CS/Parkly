@@ -12,7 +12,7 @@ import java.util.Scanner;
 
 import javax.swing.*; // Import Swing components
 
-
+// Uses server socket connection to speak to server to validate user login
 public class LoginGUI {
 	private final static String title = "Parkly Employee GUI";
 	private final JFrame mainFrame;
@@ -20,11 +20,8 @@ public class LoginGUI {
 	private final JTextField usernameField;
 	private final JPasswordField passwordField;
 	private final JTextField entryGateIdField;
-//	private final JTextField exitGateIdField;
 	private final JButton loginButton;
 	private final JButton cancelButton;
-	private static final Map<String, char[]> VALID_USERS = new HashMap<>();
-	private static final String RESOURCE_PATH = "valid_users.txt";
 	private boolean validUser = false;
 	private EmployeeService es;
 	
@@ -32,20 +29,17 @@ public class LoginGUI {
 	LoginGUI(EmployeeService es) {
 		this.es = es;
 		this.mainFrame = new JFrame(title);
-		// MODERNIZE: Use title in the dialog box
 		this.loginScreen = new JDialog(this.mainFrame, "Parkly Employee Login 🅿️", true); 
-		
-		// MODERNIZE: Use BorderLayout for outer structure and padding
 		JPanel mainPanel = new JPanel(new BorderLayout());
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 15, 20)); // Padding
 		
-		// --- NORTH: Title/Header ---
+		// NORTH: Title/Header
 		JLabel titleLabel = new JLabel("Employee Access Required", SwingConstants.CENTER);
 		titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
 		titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0)); // Bottom padding
 		mainPanel.add(titleLabel, BorderLayout.NORTH);
 		
-		// --- CENTER: Input Fields (Using GridBagLayout for alignment) ---
+		// CENTER: Input Fields (Using GridBagLayout for alignment)
 		JPanel inputPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.insets = new Insets(5, 5, 5, 5); // Padding between components
@@ -55,7 +49,7 @@ public class LoginGUI {
 		this.usernameField = new JTextField(20);
 		this.passwordField = new JPasswordField(20);
 		this.entryGateIdField = new JTextField(15);
-//		this.exitGateIdField = new JTextField(15);
+		
 		// Username Label
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -93,7 +87,7 @@ public class LoginGUI {
 		
 		mainPanel.add(inputPanel, BorderLayout.CENTER);
 		
-		// --- SOUTH: Buttons ---
+		// SOUTH: Buttons 
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0)); // Align buttons to the right
 		this.loginButton = new JButton("🔑 Login");
 		this.cancelButton = new JButton("🚪 Close");
@@ -116,22 +110,21 @@ public class LoginGUI {
 		
 		this.validUser = false;
 		// Use button to run user input through validation
-		// MODERNIZE: Use Lambda for ActionListener
 		this.loginButton.addActionListener(e -> {
 			String username = usernameField.getText();
 			char[] password = passwordField.getPassword();
 			String entranceGate = entryGateIdField.getText().trim();
+			// Uncomment bottom and comment section above to bypass login input for faster testing
 //			String exitGate = exitGateIdField.getText().trim();
 //			String username = "manager";
 //			char[] password = {'a', 'd', 'm', 'i', 'n', '1', '2', '3'};
 //			String entranceGate = "G1";
-//			String exitGate = "G2";
 			if (username.isEmpty() || password.length == 0 || entranceGate.isEmpty() /*|| exitGate.isEmpty()*/) {
 		        JOptionPane.showMessageDialog(loginScreen, "Please enter Username, Password, and Gate ID.", "Input Required", JOptionPane.ERROR_MESSAGE);
 		        validUser = false;
 		    } else {
-		        // TRY TO CHANGE TO SERVER CALL
-		    	validateUsers(username, password, entranceGate/*, exitGate*/);
+		        // Server call to validate users
+		    	validateUsers(username, password, entranceGate);
 		    }
 			Arrays.fill(password, ' ');
 		});
@@ -146,14 +139,9 @@ public class LoginGUI {
 	}
 	
 	// Validation function to approve users
-	private void validateUsers(String username, char[] password, String entranceGate/*, String exitGate*/) {
-//		String strPassword = new String(password);
-		new LoginTask(username, new String(password), entranceGate/*, exitGate*/).execute();
-	}
-	
-	// Return boolean value for inputs
-	public boolean isAuthenticated() {
-		return this.validUser;
+	private void validateUsers(String username, char[] password, String entranceGate) {
+		// Execute task to start validation with server
+		new LoginTask(username, new String(password), entranceGate).execute();
 	}
 	
 	// Display login window to user upon running application code
@@ -170,16 +158,11 @@ public class LoginGUI {
 	public String getEntryGateIdInput() {
 		return this.entryGateIdField.getText();
 	}
-//	public String getExitGateIdInput() {
-//		return this.exitGateIdField.getText();
-//	}
-	// Conceptual LoginTask.java
 
 	private class LoginTask extends SwingWorker<Boolean, Void> {
 	    private final String username;
 	    private final String password;
 	    private final String entranceGate;
-//	    private final String exitGate;
 	    private String exitGate;
 	    public LoginTask(String username, String password, String entranceGate/*, String exitGate*/) {
 	        this.username = username;
@@ -190,20 +173,17 @@ public class LoginGUI {
 
 	    @Override
 	    protected Boolean doInBackground() throws Exception {
-	        // 1. Package credentials into a Message (Type: LOGIN, Status: REQUEST)
+	        // Package credentials into a Message (Type: LOGIN, Status: REQUEST)
 	        // Combine all data into the message text, delimited for server parsing
 	        String credentials = username + "|" + password + "|" + entranceGate; //+ "|" + exitGate;
 	        Message loginMsg = new Message("LOGIN", "REQUEST", credentials);
 
-	        // 2. Send the message and synchronously wait for the response
-	        // You'll need to create a static method in SocketConnectionService 
-	        // to handle this specific synchronous wait.
+	        // Send the message and synchronously wait for the response
 	        Message response = es.sendLoginRequest(loginMsg); 
 
 	        // 3. Process the server's response
 	        if (response != null && response.getStatus().equalsIgnoreCase("SUCCESS")) {
 	        	this.exitGate = response.getText(); // Text is the key value of the login gate value
-//	        	System.out.println("Exit gate: " + this.exitGate);
 	            return true; // Login successful
 	        }
 	        return false; // Login failed or server error

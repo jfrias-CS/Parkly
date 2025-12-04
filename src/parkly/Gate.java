@@ -1,5 +1,6 @@
 package parkly;
 
+// simple gate class to keep track of each employees work station
 public class Gate {
 	private String gateID;
 	private String status; // OPEN or CLOSED

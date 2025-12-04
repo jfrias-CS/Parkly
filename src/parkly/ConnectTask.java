@@ -24,7 +24,7 @@ public class ConnectTask extends SwingWorker<SocketConnection, Void> {
 			// Create socket connection to server via connected network
 //			SocketConnection connection = EmployeeService.connect("10.0.0.114", 1235); // create an EmployeeConnection object that will hold Socket + Socket to server operations
 			es = EmployeeService.getInstance();
-			SocketConnection connection = es.connect("localhost", 9000);
+			SocketConnection connection = es.connect("10.0.0.227", 9000);
 			System.out.println("ConnectTask.doInBackground:\n\tSuccess creating EmployeeConnection connection.");
 			return connection; // Send established connection to done()
 		} catch (IOException e) {

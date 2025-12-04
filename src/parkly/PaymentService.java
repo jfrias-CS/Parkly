@@ -21,11 +21,11 @@ public class PaymentService {
 	public String getPayments() {
 	    StringBuilder allPaymentsString = new StringBuilder();
 	    boolean first = true; // Use a flag to avoid prepending the delimiter on the first payment
-	    
+	    // Iterate through map
 	    for (Payment payment : approvedPayments.values()) {
-	        // Prepend the delimiter only if it's NOT the first payment
+	        // append delimiter
 	        if (!first) {
-	            allPaymentsString.append(PAYMENT_DELIMITER); // Appends "\n"
+	            allPaymentsString.append(PAYMENT_DELIMITER);
 	        }
 	        allPaymentsString.append(toString(payment));
 	        first = false;
@@ -34,21 +34,7 @@ public class PaymentService {
 	    return allPaymentsString.toString();
 	}
 	
-//	public String getPayments() {
-//	    StringBuilder allPaymentsString = new StringBuilder();
-//	    boolean first = true;
-//	    
-//	    for (Payment payment : approvedPayments.values()) {
-//	        if (!first) {
-//	            allPaymentsString.append(PAYMENT_DELIMITER);
-//	        }
-//	        allPaymentsString.append(toString(payment));
-//	        first = false;
-//	    }
-//	    System.out.println("PS.getPayments: " + allPaymentsString.toString());
-//	    return allPaymentsString.toString();
-//	}
-	
+	// record payment
 	public String recordPayment(String ticketID, String ticketPayType, String amount, String employeeID, String gateID) {
 		System.out.println("7. PS.RP: Inside recordPayment.");
 		TicketService ticketService = TicketService.getInstance();
@@ -70,16 +56,17 @@ public class PaymentService {
 		}
 		double changeDue = paidAmount - ticketDue;
 		
+		// Make sure payments are valid
 		if (changeDue < 0) { // underpaid
-//			ticket.makePayment(paidAmount);
 			System.out.println("PaymentService: Payment failed. Underpaid by: " + (-changeDue));
 			return null;
 		} 
 		
 		boolean ticketPaid = ticketService.markTicketPaid(ticketID);
 		if (!ticketPaid) {
-			System.out.println("TICKET NOT PAID------");
+			System.out.println("TICKET NOT PAID");
 		}
+		// Returns payment as string to be parsed client side
 		String paymentString;
 		synchronized (approvedPayments) {
 		    int paymentID = getNextPaymentID();  // Get ID inside sync block
@@ -87,10 +74,12 @@ public class PaymentService {
 		    approvedPayments.put(newPayment.getPaymentID(), newPayment);
 		    paymentString = toString(newPayment);
 		}
+		
 		System.out.println("11. PS.generateNewPayment: New Payment Made.");
 		return paymentString;
 	}
 	
+	// search for previous payments
 	public Payment findPayment(String paymentID) {
 		synchronized(approvedPayments) {
 			for (Payment payment : approvedPayments.values()) {
@@ -102,10 +91,7 @@ public class PaymentService {
 		return null;
 	}
 	
-//	public String findPaymentAsString(String paymentID) {
-//		
-//	}
-	
+	// use ticket id to search for payments, unused
 	public List<Payment> findPaymentsByTicketID(String ticketID) {
 		List<Payment> paymentsForTicket = new ArrayList<>();
 		synchronized(approvedPayments) {			
@@ -120,7 +106,7 @@ public class PaymentService {
 		}
 		return paymentsForTicket;
 	}
-	
+	// convert payment to string for parsing later
 	public String toString(Payment payment) {
 		if (payment == null) {
 			return "ERROR MAKING PAYMENT STRING.";

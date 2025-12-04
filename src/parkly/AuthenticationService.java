@@ -3,8 +3,9 @@ package parkly;
 import java.util.HashMap;
 import java.util.Map;
 
+// Used to authenticate valid users to enter program
 public class AuthenticationService {
-
+	// Use maps for O(1) look up
 	private static final Map<String, String> VALID_EMPLOYEES = new HashMap<>();
 	private static final Map<String, String> VALID_GATE_IDS = new HashMap<>();
 	static {

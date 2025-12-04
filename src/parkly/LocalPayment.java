@@ -1,8 +1,6 @@
 package parkly;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
+// Local version of payment object (client side)
 public class LocalPayment {
 	private final String tag = "PAYMENT";
 	private final int paymentID;
