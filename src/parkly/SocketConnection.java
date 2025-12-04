@@ -25,6 +25,7 @@ public class SocketConnection implements Runnable {
 	private volatile String incomingPaymentInfo = null;
 	private volatile String paymentList = null;
 	private volatile String errorMessage = null;
+	private volatile String spaceTracker;
 	private String entryGateId;
 	private String entryGateStatus;
 	private String exitGateId;
@@ -36,6 +37,7 @@ public class SocketConnection implements Runnable {
 	private String text;
 	private volatile boolean running = true;
 	private volatile Boolean releaseSuccess = null;
+	private volatile Report lastReport = null;
 
 	
 	
@@ -80,9 +82,9 @@ public class SocketConnection implements Runnable {
 						String type = this.msg.getType();
 						String status = this.msg.getStatus();
 						String text = this.msg.getText();
-						
+						System.out.println("MESSAGE RECEIVED: " + type + "|" + status + "|" + text);
 						// LOGIN 
-						if (type.equalsIgnoreCase("LOGIN")) {
+						if (type.equalsIgnoreCase("LOGIN") && status.equalsIgnoreCase("SUCCESS")) {
 							this.loginResponse = this.msg;
 							System.out.println("SocketConnection.run: Received LOGIN reponse: " + status);
 						} 
@@ -93,6 +95,11 @@ public class SocketConnection implements Runnable {
 						// NEW TICKET 
 						else if (type.equalsIgnoreCase("TICKET") && status.equalsIgnoreCase("SUCCESS")) {
 							this.incomingTicket = text;
+						}
+						
+						else if (type.equalsIgnoreCase("SPACE TRACKER") && status.equalsIgnoreCase("SUCCESS")) {
+							System.out.println("SPACE TRACKER RETURNED: " + text);
+							this.spaceTracker = text;
 						}
 						else if (type.equalsIgnoreCase("TICKET") && status.equalsIgnoreCase("FOUND")) {
 							this.incomingTicket = text;
@@ -146,44 +153,56 @@ public class SocketConnection implements Runnable {
 							System.out.println("SocketConnection.run: ERROR REACHED - " + text);
 							EmployeeGUI.appendServerMessage(text);
 						}
+						
+						else if (type.equalsIgnoreCase("") && status.equalsIgnoreCase("")) {
+							
+						}
 						else {
-//										EmployeeGUI.appendServerMessage("Server: " + text + "\n");
+										EmployeeGUI.appendServerMessage("Server(Final Else Statement): " + text + "\n");
 						} break;
 						
 						
-//					case "TICKET":
-//						Ticket receivedTicket = (Ticket) taggedObject;
-//						if (this.activeTickets != null) {
-//							this.activeTickets.add(receivedTicket);
-//							System.out.println("SocketConnection: TICKET added to temp list. Current size: " + this.activeTickets.size());
-//						} else {
-//							System.out.println("SocketConnection: Single TICKET received outside of request.");
-//						}
-////						this.incomingTicket = receivedTicket;
-//						System.out.println("SocketConnection.run: TICKET OBJECT DETECTED: " + receivedTicket.getTicketID());
-//						System.out.println("\tFOUND TICKET: " + receivedTicket.getTicketID());
-//						System.out.println("\tTicket Data:\n\tENTRY TIME: " + receivedTicket.getEntryTime() + "\n\tEXIT TIME: " + 
-//											receivedTicket.getExitTime() + "\n\tFEES DUE: " + receivedTicket.getTotalFees() + "\n\tPAID: " + receivedTicket.isPaid());
-////									EmployeeGUI.appendServerMessage("\tTicket Data:\n\tENTRY TIME: " + receivedTicket.getEntryTime() + "\n\tEXIT TIME: " + 
-////											receivedTicket.getExitTime() + "\n\tFEES DUE: " + receivedTicket.getTotalFees() + "\n\tPAID: " + receivedTicket.isPaid());
 						
-//						break;
+						/*
+					case "TICKET":
+						Ticket receivedTicket = (Ticket) taggedObject;
+						if (this.activeTickets != null) {
+							this.activeTickets.add(receivedTicket);
+							System.out.println("SocketConnection: TICKET added to temp list. Current size: " + this.activeTickets.size());
+						} else {
+							System.out.println("SocketConnection: Single TICKET received outside of request.");
+						}
+						this.incomingTicket = receivedTicket;
+						System.out.println("SocketConnection.run: TICKET OBJECT DETECTED: " + receivedTicket.getTicketID());
+						System.out.println("\tFOUND TICKET: " + receivedTicket.getTicketID());
+						System.out.println("\tTicket Data:\n\tENTRY TIME: " + receivedTicket.getEntryTime() + "\n\tEXIT TIME: " + 
+											receivedTicket.getExitTime() + "\n\tFEES DUE: " + receivedTicket.getTotalFees() + "\n\tPAID: " + receivedTicket.isPaid());
+									EmployeeGUI.appendServerMessage("\tTicket Data:\n\tENTRY TIME: " + receivedTicket.getEntryTime() + "\n\tEXIT TIME: " + 
+											receivedTicket.getExitTime() + "\n\tFEES DUE: " + receivedTicket.getTotalFees() + "\n\tPAID: " + receivedTicket.isPaid());
+						
+						break;
 					
-//					case "PAYMENT":
-//						Payment receivedPayment = (Payment) taggedObject;
-//						if (this.approvedPayments != null) {
-//							this.approvedPayments.add(receivedPayment);
-//							System.out.println("SocketConnectio.run: PAYMENT added to temp list. Current size: " + this.approvedPayments.size());
-//						} else {
-//							System.out.println("SocketConnection: Single PAYMENT received outside of request.");
-//						}
-//						this.incomingPayment = receivedPayment;
-//						System.out.println("13. SocketConnection.run: PAYMENT OBJECT DETECTED: " + receivedPayment.getPaymentID());
-//						System.out.println("\tFOUND TICKET: " + receivedPayment.getPaymentID());
-//						System.out.println("\tPayment Data:" + "\n\tEmployeeID: " + receivedPayment.getEmployeeID() + "\n\tGateID: " + receivedPayment.getGateID() + 
-//											"\n\tPayment Date: " + receivedPayment.getPaymentDate() + "\n\tPayment TIME: " + 
-//											receivedPayment.getPaymentTime() + "\n\tTicket ID: " + receivedPayment.getTicketID() + "\n\tAmmount: " + receivedPayment.getPaymentAmount());
-//						break;
+					case "PAYMENT":
+						Payment receivedPayment = (Payment) taggedObject;
+						if (this.approvedPayments != null) {
+							this.approvedPayments.add(receivedPayment);
+							System.out.println("SocketConnectio.run: PAYMENT added to temp list. Current size: " + this.approvedPayments.size());
+						} else {
+							System.out.println("SocketConnection: Single PAYMENT received outside of request.");
+						}
+						this.incomingPayment = receivedPayment;
+						System.out.println("13. SocketConnection.run: PAYMENT OBJECT DETECTED: " + receivedPayment.getPaymentID());
+						System.out.println("\tFOUND TICKET: " + receivedPayment.getPaymentID());
+						System.out.println("\tPayment Data:" + "\n\tEmployeeID: " + receivedPayment.getEmployeeID() + "\n\tGateID: " + receivedPayment.getGateID() + 
+											"\n\tPayment Date: " + receivedPayment.getPaymentDate() + "\n\tPayment TIME: " + 
+											receivedPayment.getPaymentTime() + "\n\tTicket ID: " + receivedPayment.getTicketID() + "\n\tAmmount: " + receivedPayment.getPaymentAmount());
+						break;
+						*/
+					
+					case "REPORT":
+						this.lastReport = (Report) taggedObject;
+//						System.out.println("EmployeeConection.run: REPORT received for date " + lastReport.getDate() + " tickets = " + lastReport.getTickets().size());
+						break;
 					default: 
 						System.err.println("Unknown object tag received: " + tag);
 						break;
@@ -541,6 +560,50 @@ public class SocketConnection implements Runnable {
 			}
 		}
 		EmployeeGUI.appendServerMessage("Exit gate: " + exitGateId + " now " + this.entryGateStatus);
+	}
+	
+	public Report requestReport(String date) {
+		this.lastReport = null;
+		sendMessage(new Message("REPORT", "SUCCESS", date));
+		long startTime = System.currentTimeMillis();
+		final long TIMEOUT_MS = 5000;
+		while (this.lastReport == null && (System.currentTimeMillis() - startTime < TIMEOUT_MS)) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return null;
+			}
+		}
+		if (this.lastReport == null) {
+			System.out.println("SocketConnection.requestReport: timed out waiting for report.");
+		}
+		Report result = this.lastReport;
+		this.lastReport = null;
+		return result;
+	}
+	
+	public String getSpaces() {
+		this.spaceTracker = null;
+		System.out.println("SC.getSpaces: start");
+		sendMessage(new Message("SPACE TRACKER", "REQUEST", "SPACES"));
+		long startTime = System.currentTimeMillis();
+		final long TIMEOUT_MS = 8000;
+		while (this.spaceTracker == null && (System.currentTimeMillis() - startTime < TIMEOUT_MS)) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return null;
+			}
+		}
+		if (this.spaceTracker == null) {
+			System.out.println("SocketConnection.requestReport: timed out waiting for report.");
+		}
+		String returnStr = this.spaceTracker;
+		System.out.println("SC.getSpaces: " + returnStr);
+		this.spaceTracker = null;
+		return returnStr;
 	}
 	
 	public void logout() {

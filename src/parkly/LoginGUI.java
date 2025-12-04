@@ -28,36 +28,6 @@ public class LoginGUI {
 	private boolean validUser = false;
 	private EmployeeService es;
 	
-	// Initiate 1 instance of file reading
-//	static {
-//		try {
-//			// Create InputStream to read file
-//			InputStream inputStream = LoginGUI.class.getClassLoader().getResourceAsStream(RESOURCE_PATH);
-//			if (inputStream == null) {
-//				throw new FileNotFoundException("Resource not found: " + RESOURCE_PATH);
-//			}
-//			// Attempt to read the file
-//			try (Scanner scanner = new Scanner(inputStream)) {
-//				while (scanner.hasNextLine()) {
-//					String line = scanner.nextLine();
-//					if (line.trim().isEmpty() || line.trim().startsWith("#")) {
-//						continue;
-//					}
-//					String[] parts = line.split(",",2);
-//					if (parts.length == 2) {
-//						String username = parts[0].trim();
-//						String password = parts[1].trim();
-//						VALID_USERS.put(username, password.toCharArray());
-//					}
-//				}
-//				System.out.println("Loaded " + VALID_USERS.size() + " users for authentication.");
-//			}
-//		} catch (Exception e) {
-//			System.err.println("FATAL: Failed to load user data for authentication.");
-//			e.printStackTrace();
-//		}
-//	}
-	
 	// Constructor
 	LoginGUI(EmployeeService es) {
 		this.es = es;
@@ -119,17 +89,7 @@ public class LoginGUI {
 		gbc.gridy = 2; 
 		gbc.weightx = 1.0; 
 		inputPanel.add(this.entryGateIdField, gbc);
-		
-		// Exit Gate Label
-//		gbc.gridx = 0;
-//		gbc.gridy = 3;
-//		
-//		// Exit Gate Field
-//		inputPanel.add(new JLabel("Exit Gate ID: ", SwingConstants.RIGHT), gbc);
-//		gbc.gridx = 1; 
-//		gbc.gridy = 3; 
-//		gbc.weightx = 1.0; 
-//		inputPanel.add(this.exitGateIdField, gbc);
+
 		
 		mainPanel.add(inputPanel, BorderLayout.CENTER);
 		
@@ -158,13 +118,13 @@ public class LoginGUI {
 		// Use button to run user input through validation
 		// MODERNIZE: Use Lambda for ActionListener
 		this.loginButton.addActionListener(e -> {
-//			String username = usernameField.getText();
-//			char[] password = passwordField.getPassword();
-//			String entranceGate = entryGateIdField.getText().trim();
+			String username = usernameField.getText();
+			char[] password = passwordField.getPassword();
+			String entranceGate = entryGateIdField.getText().trim();
 //			String exitGate = exitGateIdField.getText().trim();
-			String username = "manager";
-			char[] password = {'a', 'd', 'm', 'i', 'n', '1', '2', '3'};
-			String entranceGate = "G1";
+//			String username = "manager";
+//			char[] password = {'a', 'd', 'm', 'i', 'n', '1', '2', '3'};
+//			String entranceGate = "G1";
 //			String exitGate = "G2";
 			if (username.isEmpty() || password.length == 0 || entranceGate.isEmpty() /*|| exitGate.isEmpty()*/) {
 		        JOptionPane.showMessageDialog(loginScreen, "Please enter Username, Password, and Gate ID.", "Input Required", JOptionPane.ERROR_MESSAGE);
@@ -189,15 +149,6 @@ public class LoginGUI {
 	private void validateUsers(String username, char[] password, String entranceGate/*, String exitGate*/) {
 //		String strPassword = new String(password);
 		new LoginTask(username, new String(password), entranceGate/*, exitGate*/).execute();
-		
-//		if (VALID_USERS.containsKey(username)) {
-//			char[] storedPassword = VALID_USERS.get(username);
-//			boolean match = Arrays.equals(storedPassword, password);
-//			Arrays.fill(password, ' ');
-//			return match;
-//		}
-//		Arrays.fill(password, ' ');
-//		return false;
 	}
 	
 	// Return boolean value for inputs

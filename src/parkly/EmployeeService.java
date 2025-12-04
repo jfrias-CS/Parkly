@@ -136,6 +136,17 @@ public class EmployeeService {
 //        return newTicket;
 //    }
     
+    
+    public static Report getReport(String date) {
+    	Report report = SocketConnectionService.getReport(date);
+	    if (report != null) {
+	        System.out.println("EmployeeService.getReport: requesting report for " + date);
+	        return report;
+	    } else {
+	        System.err.println("EmployeeService.getReport: Not connected.");
+	        return null;
+	    }
+    }
     public LocalTicket generateTicket() {
         // SocketConnectionService handles the synchronous request/response
     	System.out.println("EmployeeService.generateTicket: Sending request for ticket at gate: " + entryGateID);
@@ -162,6 +173,16 @@ public class EmployeeService {
         }
     }
 
+    public String getSpaces() {
+    	System.out.println("ES.getSpaces start.");
+    	String spaces = SocketConnectionService.getSpaces();
+    	if (spaces == null) {
+    		return "ERROR";
+    	} else {
+    		System.out.println("ES.getSpaces: " + spaces);
+    		return spaces;
+    	}
+    }
     /**
      * Synchronizes the local activeTickets map with the server and returns the current list.
      * @return A List of the current active LocalTicket objects.

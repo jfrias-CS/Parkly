@@ -234,6 +234,16 @@ public class Server {
 			    this.oos.flush();	 
 			    this.keepRunning = false;
 			} 
+			// Get spaces
+			else if(type.equalsIgnoreCase("SPACE TRACKER") && status.equalsIgnoreCase("REQUEST")) {
+				if (spaceTracker != null) {
+					System.out.println("Server.run Space tracker request.");
+					this.oos.reset();
+					this.oos.writeObject(new Message("SPACE TRACKER", "SUCCESS", spaceTracker.getCapacity() + "|" + spaceTracker.getCurrentCount() + "|" + spaceTracker.getAvailable()));
+					this.oos.flush();
+					System.out.println("Server.run Space tracker return: " + spaceTracker.getCapacity() + "|" + spaceTracker.getCurrentCount() + "|" + spaceTracker.getAvailable());
+				}
+			}
 			
 			// NEW TICKET: "ticket" "new ticket" gateId
 			else if (type.equalsIgnoreCase("TICKET") && status.equalsIgnoreCase("NEW TICKET")) {
@@ -241,6 +251,7 @@ public class Server {
 				if (spaceTracker.isFull()) {
 					this.oos.reset();
 					this.oos.writeObject(new Message("TICKET", "FAILURE", "ERROR: MAX CAPACITY REACHED"));
+					this.oos.flush();
 				} else {
 					// No issues
 					returnTicket = ticketService.generateNewTicket(text);

@@ -46,6 +46,27 @@ public class SocketConnectionService {
 		return new Message("LOGIN", "ERROR", "Not connected.");
 	}
 	
+	public static Report getReport(String date) {
+	    if (socket != null) {
+	        System.out.println("EmployeeService.getReport: requesting report for " + date);
+	        return socket.requestReport(date);
+	    } else {
+	        System.err.println("EmployeeService.getReport: Not connected.");
+	        return null;
+	    }
+    }
+	
+	public static String getSpaces() {
+		 if (socket != null) {
+			 System.out.println("SCS.getSpaces: start");
+			 String spaces = socket.getSpaces();
+			 System.out.println("SCS.getSpaces: " + spaces);
+		        return spaces;
+		    } else {
+		        System.err.println("EmployeeService.getSpaces: Not connected.");
+		        return null;
+		    }
+	}
 	
 	public static String generateTicket(String employeeID, String gateID) {
 		if (socket != null) {

@@ -39,6 +39,8 @@ public class EmployeeGUI {
 	private static JButton payFeesButton;
 	private static JButton viewPaymentsButton;
 	private static JButton openExitGateButton;
+	private static JButton spaceTrackerButton;
+	private static JButton reportButton;
 	private EmployeeService es;
 	
 	void createEmployeeDashboard(EmployeeService es) {
@@ -86,9 +88,27 @@ public class EmployeeGUI {
 		controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
 		controlPanel.setBorder(BorderFactory.createTitledBorder("Gate & Transaction Controls"));
 		
+		spaceTrackerButton = new JButton("View Space Tracking");
+		spaceTrackerButton.setAlignmentX(Component.CENTER_ALIGNMENT); // Center buttons in the box layout
+		spaceTrackerButton.setMaximumSize(new Dimension(300, 40)); // Standardize size
+		spaceTrackerButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("EmployeeGUI: View Spaces.");
+				String spaces = es.getSpaces();
+				String[] parts = spaces.split("\\|");
+	    		if (parts.length == 3) {
+	    			String capacity = parts[0];
+	    			String quantity = parts[1];
+	    			String available = parts[2];
+	    			EmployeeGUI.appendServerMessage("Capacity: " + parts[0] + "\nQuantity: " + parts[1] + "\nAvailable: " + parts[2]); 
+	    		}
+			}
+		});
 		
 		// View Valid Tickets
-		viewActiveTicketsButton = new JButton("🎟 View Active Tickets️");
+//		viewActiveTicketsButton = new JButton("🎟View Active Tickets️");
+		viewActiveTicketsButton = new JButton("View Active Tickets️");
 		viewActiveTicketsButton.setAlignmentX(Component.CENTER_ALIGNMENT); // Center buttons in the box layout
 		viewActiveTicketsButton.setMaximumSize(new Dimension(300, 40)); // Standardize size
 		viewActiveTicketsButton.addActionListener(new ActionListener() {
@@ -117,7 +137,8 @@ public class EmployeeGUI {
 		
 		// Open entry gate button
 		// Generate ticket along with opening gate
-		openEntryGateButton = new JButton("🚪 Open Entry Gate + Make New Ticket");
+//		openEntryGateButton = new JButton("🚪 Open Entry Gate + Make New Ticket");
+		openEntryGateButton = new JButton("Open Entry Gate + Make New Ticket");
 		openEntryGateButton.setAlignmentX(Component.CENTER_ALIGNMENT); // Center buttons in the box layout
 		openEntryGateButton.setMaximumSize(new Dimension(300, 40)); // Standardize size
 		openEntryGateButton.addActionListener(new ActionListener() {
@@ -126,16 +147,15 @@ public class EmployeeGUI {
 				System.out.println("EmployeeGUI: Open Gate and Create Ticket.");
 				LocalTicket newTicket = es.generateTicket();
 				if (newTicket != null) {
+					openEntryGateButton.setEnabled(false);
+					EmployeeGUI.appendServerMessage("TICKET REQUESTED");
+					String serverMessage = "Ticket ID: " + newTicket.getTicketID() + "\n\tEmployee: " + newTicket.getEmployeeID() + "\n\tGate: " + newTicket.getGateID() + "\tEnrty Date: " + newTicket.getEntryDate() + "\n\t"
+					         + "Entry Time: " + newTicket.getEntryTime() + "\n\t"
+					         + "Total Time: " + newTicket.getTotalTime() + " minutes\n";
 					
-				openEntryGateButton.setEnabled(false);
-				EmployeeGUI.appendServerMessage("TICKET REQUESTED");
-				String serverMessage = "Ticket ID: " + newTicket.getTicketID() + "\n\tEmployee: " + newTicket.getEmployeeID() + "\n\tGate: " + newTicket.getGateID() + "\tEnrty Date: " + newTicket.getEntryDate() + "\n\t"
-				         + "Entry Time: " + newTicket.getEntryTime() + "\n\t"
-				         + "Total Time: " + newTicket.getTotalTime() + " minutes\n";
-				
-				EmployeeGUI.appendServerMessage(serverMessage);
-				openEntryGateButton.setEnabled(true);
-				es.openEntryGate();
+					EmployeeGUI.appendServerMessage(serverMessage);
+					openEntryGateButton.setEnabled(true);
+					es.openEntryGate();
 				} else {
 					openEntryGateButton.setEnabled(true);
 				}
@@ -143,7 +163,8 @@ public class EmployeeGUI {
 			}
 		});
 		
-		viewPaymentsButton = new JButton ("💸View Payments");
+//		viewPaymentsButton = new JButton ("💸View Payments");
+		viewPaymentsButton = new JButton ("View Payments");
 		viewPaymentsButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		viewPaymentsButton.setMaximumSize(new Dimension(300, 40));
 		viewPaymentsButton.addActionListener(new ActionListener() {
@@ -171,7 +192,8 @@ public class EmployeeGUI {
 			}
 		});
 		// Pay fees
-		payFeesButton = new JButton("💳Lookup Ticket + Pay Fees");
+//		payFeesButton = new JButton("💳Lookup Ticket + Pay Fees");
+		payFeesButton = new JButton("Lookup Ticket + Pay Fees");
 		payFeesButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		payFeesButton.setMaximumSize(new Dimension(300, 40));
 		payFeesButton.addActionListener(new ActionListener() {
@@ -184,7 +206,8 @@ public class EmployeeGUI {
 		});
 		
 		// Open exit gate button
-		openExitGateButton = new JButton("🚧 Open Exit Gate");
+//		openExitGateButton = new JButton("🚧 Open Exit Gate");
+		openExitGateButton = new JButton("Open Exit Gate");
 		openExitGateButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		openExitGateButton.setMaximumSize(new Dimension(300, 40));
 		openExitGateButton.addActionListener(new ActionListener() {
@@ -196,8 +219,62 @@ public class EmployeeGUI {
 			}
 		});
 		
+		
+		
+		/*
+		reportButton = new JButton("Generate Report");
+		reportButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+		reportButton.setMaximumSize(new Dimension(300, 40));
+		reportButton.addActionListener(e -> {
+			String date = JOptionPane.showInputDialog(mainFrame, "Enter report date (M/d/yyy): ", "Generate Reporrt", JOptionPane.QUESTION_MESSAGE);
+			if (date == null || date.trim().isEmpty()) {
+				return;
+			}
+			Report report = EmployeeService.getReport(date.trim());
+			if (report == null) {
+				JOptionPane.showMessageDialog(mainFrame, "Could not retreive report (server error or timeout).", "Report Error", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			List<LocalTicket> tickets = report.getTickets();
+			if (tickets.isEmpty()) {
+		        JOptionPane.showMessageDialog(
+		                mainFrame,
+		                "No tickets found for " + report.getDate(),
+		                "Report",
+		                JOptionPane.INFORMATION_MESSAGE);
+		        return;
+		    }
+
+		    StringBuilder sb = new StringBuilder();
+		    sb.append("Report for ").append(report.getDate()).append("\n\n");
+		    for (Ticket t : tickets) {
+		        sb.append("Ticket ")
+		          .append(t.getTicketID())
+		          .append(" | Hours: ").append(t.getTotalTime())
+		          .append(" | Amount Paid: $")
+		          .append(String.format("%.2f", t.getTotalFees() / 1.0))
+		          .append(" | Paid: ").append(t.isPaid() ? "Yes" : "No")
+		          .append("\n");
+		    }
+		    
+		    EmployeeGUI.appendServerMessage(
+		    	    "Server: Generated report for " + report.getDate() +
+		    	    " (" + tickets.size() + " tickets)"
+		    	);
+
+
+		    JTextArea area = new JTextArea(sb.toString(), 15, 60);
+		    area.setEditable(false);
+		    JOptionPane.showMessageDialog(
+		            mainFrame,
+		            new JScrollPane(area),
+		            "Report for " + report.getDate(),
+		            JOptionPane.INFORMATION_MESSAGE);
+		});
+		*/
 		// Logout button
-		logoutButton = new JButton("❌ Logout");
+//		logoutButton = new JButton("❌ Logout");
+		logoutButton = new JButton("Logout");
 		logoutButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		logoutButton.setMaximumSize(new Dimension(300, 40));
 		logoutButton.addActionListener(new ActionListener() {
@@ -220,6 +297,8 @@ public class EmployeeGUI {
 		});
 		// Add vertical spacing between buttons
 		controlPanel.add(Box.createVerticalStrut(15));
+		controlPanel.add(spaceTrackerButton);
+		controlPanel.add(Box.createVerticalStrut(15));
 		controlPanel.add(viewActiveTicketsButton);
 		controlPanel.add(Box.createVerticalStrut(15));
 		controlPanel.add(openEntryGateButton);
@@ -230,6 +309,8 @@ public class EmployeeGUI {
 		controlPanel.add(Box.createVerticalStrut(15));
 		controlPanel.add(openExitGateButton);
 		controlPanel.add(Box.createVerticalStrut(30)); // Extra space before logout
+		controlPanel.add(Box.createVerticalStrut(30));
+//		controlPanel.add(reportButton);
 		controlPanel.add(logoutButton);
 		controlPanel.add(Box.createVerticalStrut(15));
 		
