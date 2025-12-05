@@ -1,7 +1,7 @@
-🅿️ Parkly: Comprehensive Garage Operations System
+# 🅿️ Parkly: Comprehensive Garage Operations System
 Parkly is a multi-threaded, concurrent garage management system designed for automated and secure parking facility operations. It demonstrates robust architectural design by handling complex, real-time processes from entry to exit, payment, and internal employee management.
 
-Key Functionalities:
+# Key Functionalities:
 
 Ticketing & Tracking: Automated generation of unique ticket IDs, complete ticket tracking, and space tracking to manage occupancy in real-time.
 
@@ -9,7 +9,7 @@ Access Control: Manages entry to the garage via ticket generation and exit gate 
 
 Financial & Security: Tracks payment status per ticket and provides secure employee login validation coupled with employee time tracking.
 
-Architectural Highlights:
+# Architectural Highlights:
 
 Parkly is built using key object-oriented design patterns to ensure stability and efficiency:
 
